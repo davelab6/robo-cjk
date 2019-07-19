@@ -44,14 +44,13 @@ from interface.DeepComponentsInstantiator import DeepComponentsInstantiator
 from interface.Layers import Layers
 from interface.GlyphLayers import GlyphLayers
 from interface.DesignFrame import DesignFrame
+from interface.TextCenter import TextCenter
 
 from drawers.CurrentGlyphViewDrawer import CurrentGlyphViewDrawer
 
 from Helpers import readCurrentProject, normalizeUnicode, SmartTextBox, deepolation
 
 from testInstall import testInstall
-
-
 
 cwd = os.getcwd()
 rdir = os.path.abspath(os.path.join(cwd, os.pardir))
@@ -280,7 +279,10 @@ class RoboCJK():
         # Preferences(self)
 
     def _textCenter_callback(self, sender):
-        message("Work in Progress...")    
+        if not self.font: 
+            message("Warning there is no current font")
+            return
+        TextCenter(self)  
 
     def _testInstall_callback(self, sender):
         testInstall(self)
