@@ -19,6 +19,8 @@ along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 from imp import reload
 import Global
 reload(Global)
+import interface
+reload(interface)
 
 from interface import RoboCJK
 

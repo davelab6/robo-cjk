@@ -20,7 +20,58 @@ import os, subprocess
 from pathlib import Path
 from vanilla.dialogs import message
 from AppKit import NSColor, NSFont, NSAppearance
+from mojo.UI import CurrentGlyphWindow
 from vanilla import TextBox
+from ufoLib.pointPen import PointToSegmentPen
+from mojo.roboFont import *
+
+def deepCompatible(masterGlyph, layersNames):
+    for layerName in layersNames:
+        glyph = masterGlyph.getLayer(layerName)
+        if len(glyph) != len(masterGlyph):
+            return False
+        for c1, c2 in zip(glyph, masterGlyph):
+            if len(c1) != len(c2):
+                return False
+    return True
+    
+def deepolation(newGlyph, masterGlyph, layersInfo = {}):
+    
+    if not deepCompatible(masterGlyph, list(layersInfo.keys())):
+        return False
+    
+    pen = PointToSegmentPen(newGlyph.getPen())
+    
+    for contourIndex, contour in enumerate(masterGlyph):
+        
+        pen.beginPath()
+        
+        for pointIndex, point in enumerate(contour.points):
+            
+            px, py = point.x, point.y
+            ptype = point.type if point.type != 'offcurve' else None
+            
+            points = [(px, py)]
+            for layerName, value in layersInfo.items():
+                
+                ratio = value/1000*(len(layersInfo)+1)
+                layerGlyph = masterGlyph.getLayer(layerName)
+                
+                pI = layerGlyph[contourIndex].points[pointIndex]
+                pxI, pyI = pI.x, pI.y
+                
+                newPx = px + (pxI - px) * ratio
+                newPy = py + (pyI - py) * ratio
+                
+                points.append((newPx, newPy))
+                
+            newX = int(sum(p[0] for p in points) / len(points))
+            newY = int(sum(p[1] for p in points) / len(points))
+            pen.addPoint((newX, newY), ptype)
+            
+        pen.endPath()
+        
+    return newGlyph
 
 def normalizeUnicode(code):
     if len(code) < 4:
@@ -32,12 +83,14 @@ def setDarkMode(w, darkMode):
     if darkMode:
         appearance = NSAppearance.appearanceNamed_('NSAppearanceNameVibrantDark')
         if hasattr(w, "accordionView"):
-            w.accordionView.setBackgroundColor(NSColor.colorWithCalibratedRed_green_blue_alpha_(.1, .1, .1, 1))
+            w.accordionView.setBackgroundColor(NSColor.colorWithCalibratedRed_green_blue_alpha_(.08, .08, .08, 1))
     else:
         appearance = NSAppearance.appearanceNamed_('NSAppearanceNameAqua')
         if hasattr(w, "accordionView"):
             w.accordionView.setBackgroundColor(NSColor.colorWithCalibratedRed_green_blue_alpha_(1, 1, 1, 1))
     w.getNSWindow().setAppearance_(appearance)
+    if CurrentGlyphWindow():
+        CurrentGlyphWindow().window().getNSWindow().setAppearance_(appearance)
 
 def makepath(filepath):
     # Create path if it do not exist
@@ -71,9 +124,36 @@ def readCurrentProject(self, project):
     self.selectedCharactersSets = project["CharactersSets"]
 
     # Masters
-    self.mastersPaths = project["MastersPaths"]
-    self.fontDict = {path.split("/")[-1][:-4]:path for path in self.mastersPaths}
-    self.fontList = [name for name in sorted(self.fontDict.keys())]
+    self.mastersPaths = list(project["UFOsPaths"].keys())
+    self.storagePaths = list(project["UFOsPaths"].values())
+    # self.fontDict = {path.split("/")[-1][:-4]:path for path in self.mastersPaths}
+    self.fonts = {}
+    self.fontList = []
+    self.storageFonts = {}
+    self.storageFontsList = []
+    self.font2Storage = {}
+
+    for fontPath, storagePath in project["UFOsPaths"].items():
+
+        fontName = fontPath.split("/")[-1][:-4]
+        storageFontName = storagePath.split("/")[-1][:-4]
+
+        try:
+            font = OpenFont(self.projectPath + fontPath, showUI = False)
+            storageFont = OpenFont(self.projectPath + storagePath, showUI = False)
+            self.font2Storage[font] = storageFont
+            self.fonts[fontName] = font
+            self.storageFonts[storageFontName] = storageFont
+        except:pass 
+
+        self.fontList.append(fontName)
+        self.storageFontsList.append(storageFontName)
+        
+
+    self.glyphsSetDict = {font: [dict(Name = name, Char = chr(int(name[3:],16)) if name.startswith('uni') else "") for name in font.lib['public.glyphOrder']] for font in self.fonts.values()}
+
+    # print(self.glyphsSetDict)
+
     self.masterslist = [{"FamilyName": name.split("-")[0], "StyleName": name.split("-")[1]} for name in self.fontList]
 
     # Design Frame
@@ -96,6 +176,24 @@ def readCurrentProject(self, project):
 
     #Glyph composition Data
     self.glyphCompositionData = project["glyphCompositionData"]
+
+    key2Glyph = {}
+    for glyphName, keys in self.glyphCompositionData.items():
+        for key in keys:
+            elem = key.split('_')
+            k = elem[0]
+            pos = elem[2]
+            if k not in key2Glyph:
+                key2Glyph[k] = {}
+            if pos not in key2Glyph[k]:
+                key2Glyph[k][pos] = []
+            key2Glyph[k][pos].append("uni" + glyphName)
+    self.key2Glyph = {}
+    for k, v in key2Glyph.items():
+        if k not in self.key2Glyph:
+            self.key2Glyph[k] = []
+        for pos, elem in v.items():
+            self.key2Glyph[k].extend(elem)
 
 class GitHelper():
 

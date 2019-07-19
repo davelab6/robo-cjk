@@ -37,7 +37,7 @@ class ReferenceViewer(Group):
                 callback = self._OnOff_referenceViewer_callback)
 
         self.drawPreview_referenceViewer = 1
-        self.drawPreview_referenceViewer_checkBox = CheckBox((150,5,-10,20),
+        self.drawPreview_referenceViewer_checkBox = CheckBox((10,25,-10,20),
                 'Draw Preview',
                 value = self.drawPreview_referenceViewer,
                 sizeStyle = "small",
@@ -48,11 +48,11 @@ class ReferenceViewer(Group):
 
     def _OnOff_referenceViewer_callback(self, sender):
         self.OnOff_referenceViewer = sender.get()
-        UpdateCurrentGlyphView()
+        self.ui.updateViews()
 
     def _drawPreview_referenceViewer_callback(self, sender):
         self.drawPreview_referenceViewer = sender.get()
-        UpdateCurrentGlyphView()
+        self.ui.updateViews()
 
     def windowWillClose(self, sender):
         self.observer(remove=True)

@@ -1,83 +1,73 @@
 digraph{
+	node [shape = record, fontname="Arial"]
+	rankdir = TB
+	fontname="Helvetica"
 
-	subgraph {
-		
-		node [shape = record, fontname="Arial"]
-		rankdir = TB
-		fontpath="./documentation/"
-		fontname="Helvetica"
-		fontnames="ps"
+	subgraph "Deep Component Editor"{
 
-		"RoboCJK" [style=filled, fillcolor=deeppink]
+		"Master UFO" [style=filled, fillcolor=lightblue]
+		"Master UFO" -> "Basic Character Set" 
+		"Deep Components Editor Tool" [style=filled, fillcolor=green, shape=oval]
 
-		subgraph {
-			node [style=filled, fillcolor=pink]
+		"Basic Character Set" -> "Selection to DeepComponent"
 
-			"RoboCJK Settings" [style=filled, fillcolor=gray]
+		"Selection to DeepComponent" [style=filled, fillcolor=green, shape=oval]
 
-			"RoboCJK" -> "Project Editor"
-			"RoboCJK" -> "RoboCJK Settings"
-			"Deep Component Editor"
-			"Deep Component Instantiator"
-			"Get Mini Font / Inject Back"
+		"Selection to DeepComponent" -> "Deep Components Editor Tool" [dir=both]
 
-		}
-		
-		subgraph {
-			node [style=filled, fillcolor=lightblue]
-			 "UFO-Masters" -> "Get Mini Font / Inject Back" -> "UFO-Subsetted" [dir="both"]
-			 "Deep Component Editor" -> "Deep Component Glyphs"
-		}
+		"DeepComponent Storage UFO" [dir=both, style=filled, fillcolor=lightblue]
 
-	 	"Project Editor" -> "JSON roboCJKproject"
+		"Deep Components Editor Tool" -> "DeepComponent Storage UFO"
+		"DeepComponent Storage UFO" -> "{DeepComponentGlyph:{}}"
 
-		subgraph {
-			node [style=filled, fillcolor=gray]
-			"JSON roboCJKproject" -> "Character-Sets"
-		 	"JSON roboCJKproject" -> "UFO-Masters"
-		 	"JSON roboCJKproject" -> "Glyph Composition Data"
-		 	"JSON roboCJKproject" -> "Project Settings"
-		}
+		"Storage FontLib" [style=filled, fillcolor=lightblue]
 
-		
+		"{DeepComponentGlyph:{}}" -> "Storage FontLib" [dir=both]
 
-		"Deep Component Editor" -> "UFO-Masters"
+		"DeepComponent Storage UFO" -> "DeepComponent Glyph"
 
-		"Glyph Composition Data" -> "Deep Component Editor" [dir="both"]
-		"Glyph Composition Data" -> "Get Mini Font / Inject Back" [dir="both"]
-		"Glyph Composition Data" -> "Deep Component Instantiator"
-		"Deep Component Glyphs" -> "Deep Component Instantiator"
+		"DeepComponent Glyph" [style=filled, fillcolor=yellow]
 
-		"Deep Component Instantiator" -> "UFO-Subsetted" 
+		"Master Layers" [style=filled, fillcolor=yellow]
 
-		"CI Build" [shape=circle]
-		"UFO-Masters" -> "CI Build"
-		"Deep Component Glyphs" -> "CI Build"
+		"DeepComponent Glyph" -> "Master Layers" [dir=both]
 
-		"Deep Component Instances Data" [style=filled, fillcolor=gray]
+		"Master Layers" -> "[LayerNames]" 
 
-		"Deep Component Instantiator" -> "Deep Component Instances Data" 
-		"Deep Component Instances Data" ->  "CI Build"
+		"Storage GlyphLib" [style=filled, fillcolor=yellow]
 
-		"VarFont 1.9" [style=filled, fillcolor=darkorange, shape=diamond]
-		
-		"CI Build" -> "VarFont 1.9"
-
+		"[LayerNames]" -> "Storage GlyphLib" [dir=both]
 
 	}
 
-	subgraph {
-		node [style=filled, fillcolor=gold, shape = record, fontname="Arial"]
-		"CJK Space Center" -> "RoboCJK Settings" [dir="back"]
-		"Balance Handles" -> "RoboCJK Settings" [dir="back"]
-		"Power Ruler" -> "RoboCJK Settings" [dir="back"]
-		"Interpolaviour" -> "RoboCJK Settings" [dir="back"]
+	subgraph "Deep Component Instantiator"{
+		"Deep Components Instantiator Tool" [style=filled, fillcolor=green, shape=oval]
 
-		"Design Frame" -> "Project Settings" [dir="back"]
-		"Reference Viewer" -> "Project Settings" [dir="back"]
-		"Calendar" -> "Project Settings" [dir="back"]
+		"Character Glyph" [style=filled, fillcolor=yellow]
+
+		"Master UFO" -> "Character Glyph" -> "Deep Components Instantiator Tool"
+
+		"GlyphsCompositionRules DB" [style=filled, fillcolor=pink]
+		"GlyphsCompositionRules DB" -> "Character Glyph" [dir=both]
+		"GlyphsCompositionRules DB" -> "Deep Components Instantiator Tool" [dir=both]
+
+		"Select Instance" [shape=circle]
+		"Add Instance" [shape=circle]
+		"Deep Components Instantiator Tool" -> "Select Instance" [dir=both]
+		"Select Instance" -> "{DeepComponentGlyph:{}}" 
+		"Deep Components Instantiator Tool" -> "Add Instance" -> "[LayerNames]" [dir=both]
+		"Add Instance" -> "{UUID:{Instance DeepCompo-DesignSpace Location}}"
+		"{UUID:{Instance DeepCompo-DesignSpace Location}}" -> "{DeepComponentGlyph:{}}"
+
+		"Character GlyphLib" [style=filled, fillcolor=yellow]
+		"Visual Feedback (UI)" [style=filled, fillcolor=green, shape=oval]
+		"Character Glyph" -> "Visual Feedback (UI)" [dir=both]
+		"Visual Feedback (UI)" -> "Character GlyphLib" [dir=both]
+
+		"Add Instance" -> "{DeepComponentGlyph:(UUID, Offset)}"
+		"Select Instance" -> "{DeepComponentGlyph:(UUID, Offset)}"
+
+		"{DeepComponentGlyph:(UUID, Offset)}" -> "Character GlyphLib"
 	}
-
-
 
 }

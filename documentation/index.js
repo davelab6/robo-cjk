@@ -1,3 +1,4 @@
+
 // Copyright 2019 Black Foundry.
 
 // This file is part of Robo-CJK.
