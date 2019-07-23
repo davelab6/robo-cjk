@@ -96,10 +96,15 @@ class DesignFrameDrawer():
             proximityPoints = False, 
             translate_secondLine_X = 0, 
             translate_secondLine_Y = 0,
-            scale = 1):
+            scale = 1,
+            inverse = 0):
         save()
         fill(None)
-        stroke(0)
+        inclr = lambda x: abs(x - inverse)
+
+        blackColor = (inclr(0), inclr(0), inclr(0), 1)
+        rc, gc, bc, ac = blackColor
+        stroke(rc, gc, bc, ac)
         x, y = 0, 0
         w, h = self.c.EM_Dimension_X, self.c.EM_Dimension_Y
         translateY = -12 * h / 100
@@ -155,7 +160,8 @@ class DesignFrameDrawer():
         
         if customsFrames:
             fill(None)
-            stroke(0)
+            rc, gc, bc, ac = blackColor
+            stroke(rc, gc, bc, ac)
             for frame in self.c.customsFrames:
                 if not "Values" in frame: continue
                 x, y, charfaceW, charfaceH = self.getEmRatioFrame(frame["Values"], w, h)
