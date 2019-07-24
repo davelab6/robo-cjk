@@ -527,7 +527,7 @@ class RoboCJK():
         if self.glyph is not None and self.glyphCompositionData and self.glyph.unicode:
             uni = normalizeUnicode(hex(self.glyph.unicode)[2:].upper())
             if uni in self.glyphCompositionData:
-                self.compositionGlyph = [dict(Char = chr(int(name.split('_')[0],16)), Name = name) for name in self.glyphCompositionData[uni]]
+                self.compositionGlyph = [dict(Char = chr(int(name.split('_')[0],16)), Name = '_'.join(name.split('_')[:2])) for name in self.glyphCompositionData[uni]]
 
     def _importProject_callback(self, projectPath):
         # get the path of .project file
