@@ -32,7 +32,7 @@ class Select2DeepCompoSheet():
 
         self.w = Sheet((330, 350), self.ui.w)
         self.font = self.ui.font
-        self.storageFont = self.ui.font2Storage[self.font]
+        # self.storageFont = self.ui.font2Storage[self.font]
 
         self.selectedName = ""
 
@@ -65,7 +65,7 @@ class Select2DeepCompoSheet():
         
         self.w.newLayerbutton.show(False)
 
-        self.w.GlyphPreview = GlyphPreview((0, 190, -0, -30))
+        self.w.glyphPreview = GlyphPreview((0, 190, -0, -30))
 
         self.w.addButton = Button((110, -30, -10, -10), 
             "add", 
@@ -83,7 +83,8 @@ class Select2DeepCompoSheet():
             message("Warning, there is no selected name")
             return
 
-        f = self.storageFont
+        f = self.ui.font2Storage[self.font]
+        # f = self.storageFont
      
         if self.selectedLayer not in f.layers:
             f.newLayer(self.selectedLayer)
@@ -125,7 +126,7 @@ class Select2DeepCompoSheet():
         else:
             f.lib["deepComponentsGlyph"][self.selectedName][ID] = {self.selectedLayer:1000}
 
-        self.gd.variantsName = [dict(Sel=0, Name = name) for name in list(filter(lambda x: self.ui.selectedCompositionGlyphName["Name"] in x, list(self.storageFont.keys())))]
+        self.gd.variantsName = [dict(Sel=0, Name = name) for name in list(filter(lambda x: self.ui.selectedCompositionGlyphName["Name"] in x, list(f.keys())))]
         self.gd.variants_List.set(self.gd.variantsName)
 
         self.ui.glyph.prepareUndo()
@@ -159,24 +160,30 @@ class Select2DeepCompoSheet():
             self.selectedName = ""
             self.existingLayers = []
             return
-        self.selectedName = sender.get()[sel[0]]
+        try:
+            self.selectedName = sender.get()[sel[0]]
 
-        f = self.storageFont
+            f = self.ui.font2Storage[self.font]
+            # f = self.storageFont
 
-        if self.selectedName not in f.keys():
-            self.existingLayers = ["foreground"]
-            self.w.newLayerbutton.show(False)
+            if self.selectedName not in f.keys():
+                self.existingLayers = ["foreground"]
+                self.w.newLayerbutton.show(False)
 
-        elif "deepComponentsLayer" not in f[self.selectedName].lib or not f[self.selectedName].lib["deepComponentsLayer"]:
-            self.existingLayers = ["foreground"]
-            self.w.newLayerbutton.show(False)
+            elif "deepComponentsLayer" not in f[self.selectedName].lib or not f[self.selectedName].lib["deepComponentsLayer"]:
+                self.existingLayers = ["foreground"]
+                self.w.newLayerbutton.show(False)
 
-        else:
-            self.existingLayers = [layer.name for layer in f.layers]
-            self.w.newLayerbutton.show(True)
+            else:
+                self.existingLayers = [layer.name for layer in f.layers]
+                print(self.existingLayers)
+                self.w.newLayerbutton.show(True)
 
-        self.w.existingLayers_List.set(self.existingLayers)
-        self.setGlyphPreview()
+            self.w.existingLayers_List.setSelection([])
+            self.w.existingLayers_List.set(self.existingLayers)
+
+            # self.setGlyphPreview()
+        except:pass
 
     def _existingLayers_List_selectionCallback(self, sender):
         sel = sender.getSelection()
@@ -187,12 +194,21 @@ class Select2DeepCompoSheet():
         self.setGlyphPreview()
 
     def setGlyphPreview(self):
-        f = self.storageFont
+        # try:
+        f = self.ui.font2Storage[self.ui.font]
+        # print(self.ui.font2Storage)
+        # print(self.ui.font)
+        # # f = self.storageFont
         if self.selectedName and self.selectedLayer and self.selectedName in self.existingName and self.selectedLayer in self.existingLayers:
             g = f[self.selectedName].getLayer(self.selectedLayer)
-            self.w.GlyphPreview.setGlyph(g)
         else:
-            self.w.GlyphPreview.setGlyph(None)
+            g = None
+            # for c in g:
+            #     print(c)
+        # self.w.glyphPreview.setGlyph(g)
+        # else:
+        #     self.w.GlyphPreview.setGlyph(None)
+        # except:pass
 
     def _newName_button_callback(self, sender):
         i = 0
