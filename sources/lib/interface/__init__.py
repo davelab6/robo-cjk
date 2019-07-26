@@ -521,6 +521,12 @@ class RoboCJK():
     def _setUI(self):
         # FONT GROUP
         self.w.fontsGroup.fonts_list.set(self.fontList)
+        if "temp" in self.fonts[self.fontList[0]].path:
+            self.w.fontsGroup.getMiniFont.show(False)
+            self.w.fontsGroup.injectBack.show(True)
+        else:
+            self.w.fontsGroup.getMiniFont.show(True)
+            self.w.fontsGroup.injectBack.show(False)
 
     def getCompositionGlyph(self):
         self.compositionGlyph = []

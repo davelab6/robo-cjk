@@ -42,7 +42,6 @@ class Fonts(Group):
         self.fontList = []
         self.fonts_list = List((0,20,-0,-30), 
                 self.fontList,
-                # doubleClickCallback = self._fonts_list_doubleClickCallback,
                 selectionCallback = self._fonts_list_selectionCallback,
                 drawFocusRing = False)
 
@@ -70,26 +69,90 @@ class Fonts(Group):
         self.ui.w.deepComponentsEditorGroup.GlyphLayers.set_glyphset_List()
         self.ui.setLayer_List()
 
-    # def _fonts_list_doubleClickCallback(self, sender):
-    #     sel = sender.getSelection()
-    #     if not sel: return
-    #     for i in sel:
-    #         fontPath = self.ui.projectPath+self.ui.fontDict[self.ui.fontList[i]]
-    #         f = OpenFont(fontPath)
-
     def _getMiniFont_callback(self, sender):
         GetMiniFont_Sheet(self.ui)
-        # self.glyph = self.ui.glyph
-        # if self.glyph is None:
-        #     message("You should have at least one selected glyph to do a minifont")
-        #     return
-        # self.font = CurrentFont()
-        # # GetMiniFont(self.ui)
-        # self.ui.setUIMiniFonts()
-        # self.ui.setMiniFontsView(collapsed = False)
 
     def _injectBack_callback(self, sender):
-        pass
+        InjectBack(self.ui)
+
+class InjectBack():
+
+    def __init__(self, interface):
+        self.ui = interface
+        self.rdir = self.ui.projectPath
+        self.injectBack()
+
+    def injectBack(self):
+        git = GitHelper(self.rdir)
+        git.pull()
+        user = git.user()
+
+        dt = datetime.datetime.today()
+        stamp = str(dt.year) + str(dt.month) + str(dt.day) + "_" + str(''.join(user[:-1].decode('utf-8').split(' ')))
+
+        WIPPath = os.path.join(self.rdir, "resources/WIP_DCEditor.json")
+        self.WIP_DCEditor = json.load(open(WIPPath, "r"))
+
+        fontsLinkPath = os.path.join(self.rdir, "Temp/Fonts_Link.json")
+        self.Fonts_Link = json.load(open(fontsLinkPath, "r"))
+
+        fontsList = []
+        fonts = {}
+        font2Storage = {}
+
+        for tempFontName, tempFont, in self.ui.fonts.items():
+
+            fontName = self.Fonts_Link["linkFontsName"][tempFontName]
+            fontPath = self.ui.projectPath + "/Design/%s.ufo"%fontName
+            font = OpenFont(fontPath, showUI = False)
+
+            storageTempFontName = self.Fonts_Link["font2storage"][tempFontName]
+
+            storageFontName = self.Fonts_Link["linkFontsName"][storageTempFontName]
+            storageFontPath = self.ui.projectPath + "/Storage/%s.ufo"%storageFontName
+            storageFont = OpenFont(storageFontPath, showUI = False)
+
+            for glyph in tempFont:
+                font[glyph.name] = glyph
+
+            for glyph in self.ui.font2Storage[tempFont]:
+                storageFont.newGlyph(glyph.name)
+                storageFont[glyph.name] = glyph
+
+                for layer in glyph.layers:
+                    if layer.layerName not in [layer.name for layer in storageFont.layers]:
+                        storageFont.newLayer(layer.layerName)
+                        storageFont.getLayer(layer.layerName).insertGlyph(layer)
+
+            if "deepComponentsGlyph" in self.ui.font2Storage[tempFont].lib:
+                if "deepComponentsGlyph" not in storageFont.lib:
+                    storageFont.lib['deepComponentsGlyph'] = {}
+                for k, v in self.ui.font2Storage[tempFont].lib['deepComponentsGlyph'].items():
+                    storageFont.lib['deepComponentsGlyph'][k] = v
+
+
+            fontsList.append(fontName)
+            fonts[fontName] = font
+            font2Storage[font] = storageFont
+
+            font.save()
+            storageFont.save()
+
+        self.ui.fontList = fontsList
+        self.ui.fonts = fonts
+        self.ui.font2Storage = font2Storage
+
+        self.ui.font = fonts[fontsList[0]]
+
+        self.ui.glyphsSetDict = {font: [dict(Name = name, Char = chr(int(name[3:],16)) if name.startswith('uni') else "") for name in font.lib['public.glyphOrder']] for font in self.ui.fonts.values()}
+
+        git.commit('DONE: ' + stamp)
+        git.push()
+
+        self.ui._setUI()
+        self.ui.w.fontsGroup.fonts_list.setSelection([0])
+        self.ui.w.fontsGroup.injectBack.show(False)
+        self.ui.w.fontsGroup.getMiniFont.show(True)
 
 
 class GetMiniFont_Sheet():
@@ -174,7 +237,6 @@ class GetMiniFont_Sheet():
             message("Warning there is no chosen glyph")
             return
 
-        # if not
         GetMiniFont(self.ui, self.selectedGlyphName, self.selectedMiniFontOption, self)
 
 class GetMiniFont():
@@ -223,6 +285,13 @@ class GetMiniFont():
             message("This glyph is lock, please choose another one")
             return
 
+        self.Fonts_Link = {}
+        fontsLinkPath = os.path.join(self.rdir, "Temp/Fonts_Link.json")
+        makepath(fontsLinkPath)
+
+        self.Fonts_Link["font2storage"] = {}
+        self.Fonts_Link["linkFontsName"] = {}
+
         mini_glyphSet = ["uni"+normalizeUnicode(hex(ord(char))[2:].upper()) for variants in self.database[chr(int(self.characterName[3:],16))] for char in variants]        
 
         self.WIP_DCEditor[self.characterName] = mini_glyphSet
@@ -251,12 +320,12 @@ class GetMiniFont():
             makepath(tempPath)
             tempFont.save(tempPath)
 
-            ######### STOREAGE UFO ########
+            ######### STORAGE UFO ########
             storageFont = self.ui.font2Storage[font]
             familyName, styleName = font.info.familyName, font.info.styleName
 
-            tempStorageGlyphSet = list(filter(lambda x: x.startswith(self.characterName[3:]), storageFont))
-            storageTempFont = NewFont(familyName = "Temp %s"%familyName, styleName = styleName, showInterface = False)
+            tempStorageGlyphSet = list(filter(lambda x: x.startswith(self.characterName[3:]), storageFont.keys()))
+            storageTempFont = NewFont(familyName = "Storage Temp %s"%familyName, styleName = styleName, showInterface = False)
             storageTempFont.info.unitsPerEm = 1000
 
             for name in tempStorageGlyphSet:
@@ -266,10 +335,15 @@ class GetMiniFont():
             storageTempFont.glyphOrder = tempStorageGlyphSet
 
             storageTempFontName = "storageTemp-%s-%s"%(stamp, storageTempFont.info.styleName)
+
+            self.Fonts_Link["linkFontsName"][tempFontName] = fontName
+            self.Fonts_Link["linkFontsName"][storageTempFontName] = storageFont.path.split("/")[-1][:-4]
+
+            self.Fonts_Link["font2storage"][tempFontName] = storageTempFontName
+
             storageTempPath = os.path.join(self.rdir, "Temp/%s.ufo" % storageTempFontName)
             makepath(storageTempPath)
             storageTempFont.save(storageTempPath)
-
 
             fonts[tempFontName] = tempFont
             fontsList.append(tempFontName)
@@ -284,8 +358,7 @@ class GetMiniFont():
 
         self.ui.glyphsSetDict = {font: [dict(Name = name, Char = chr(int(name[3:],16)) if name.startswith('uni') else "") for name in font.lib['public.glyphOrder']] for font in self.ui.fonts.values()}
 
-            # fonts[path] = f2
-        # print(self.characterName, self.database[chr(int(self.characterName[3:],16))])
+        open(fontsLinkPath, "w").write(json.dumps(self.Fonts_Link))
 
         if not git.commit('TO DO: ' + stamp): return
         git.push()
