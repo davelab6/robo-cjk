@@ -22,6 +22,7 @@ from mojo.glyphPreview import GlyphPreview
 from mojo.roboFont import *
 from mojo.UI import AccordionView
 from AppKit import NSColor
+import shutil
 from imp import reload
 
 import os, json, subprocess, datetime, Helpers, getpass, time
@@ -82,13 +83,21 @@ class InjectBack():
         self.rdir = self.ui.projectPath
         self.injectBack()
 
+    def writeJsonFile(self, name):
+        path = os.path.join(self.rdir, f"resources/{name}.json")
+        makepath(path)
+        myFile = open(path, 'w')
+        d = json.dumps(getattr(self, name), indent=4, separators=(',', ':'))
+        myFile.write(d)
+        myFile.close()
+
     def injectBack(self):
         git = GitHelper(self.rdir)
         git.pull()
         user = git.user()
 
         dt = datetime.datetime.today()
-        stamp = str(dt.year) + str(dt.month) + str(dt.day) + "_" + str(''.join(user[:-1].decode('utf-8').split(' ')))
+        stamp = list(self.ui.fonts.keys())[0].split("-")[1]
 
         WIPPath = os.path.join(self.rdir, "resources/WIP_DCEditor.json")
         self.WIP_DCEditor = json.load(open(WIPPath, "r"))
@@ -153,6 +162,11 @@ class InjectBack():
         self.ui.w.fontsGroup.fonts_list.setSelection([0])
         self.ui.w.fontsGroup.injectBack.show(False)
         self.ui.w.fontsGroup.getMiniFont.show(True)
+
+        shutil.rmtree(self.ui.projectPath+'/Temp')
+
+        del self.WIP_DCEditor[stamp]
+        self.writeJsonFile("WIP_DCEditor")
 
 
 class GetMiniFont_Sheet():
@@ -294,7 +308,7 @@ class GetMiniFont():
 
         mini_glyphSet = ["uni"+normalizeUnicode(hex(ord(char))[2:].upper()) for variants in self.database[chr(int(self.characterName[3:],16))] for char in variants]        
 
-        self.WIP_DCEditor[self.characterName] = mini_glyphSet
+        self.WIP_DCEditor[stamp] = mini_glyphSet
 
         self.writeJsonFile("WIP_DCEditor")
  
