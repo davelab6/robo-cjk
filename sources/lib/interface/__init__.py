@@ -295,6 +295,7 @@ class RoboCJK():
         self.w.deepComponentsEditorGroup.show(sel)
 
         self.w.fontsGroup.getMiniFont.show(self.activeMaster)
+        self.w.fontsGroup.injectBack.show(abs(self.activeMaster-1))
 
         if not sel:
             glyphset_ListSel = self.w.activeMasterGroup.glyphSet.glyphset_List.getSelection()

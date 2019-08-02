@@ -139,7 +139,6 @@ class InjectBack():
                 for k, v in self.ui.font2Storage[tempFont].lib['deepComponentsGlyph'].items():
                     storageFont.lib['deepComponentsGlyph'][k] = v
 
-
             fontsList.append(fontName)
             fonts[fontName] = font
             font2Storage[font] = storageFont
@@ -342,6 +341,10 @@ class GetMiniFont():
             storageTempFont = NewFont(familyName = "Storage Temp %s"%familyName, styleName = styleName, showInterface = False)
             storageTempFont.info.unitsPerEm = 1000
 
+            ########################################
+            ######## WRITE STORAGE FONT LIB ########
+            ########################################
+
             for name in tempStorageGlyphSet:
                 storageTempFont.newGlyph(name)
                 storageTempFont[name] = storageFont[name]
@@ -362,7 +365,6 @@ class GetMiniFont():
             fonts[tempFontName] = tempFont
             fontsList.append(tempFontName)
             font2Storage[tempFont] = storageTempFont
-
 
         self.ui.fontList = fontsList
         self.ui.fonts = fonts
