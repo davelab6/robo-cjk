@@ -234,7 +234,9 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.w.mainCanvas.update()
 
     def addNLIButtonCallback(self, sender):
-        self.RCJKI.deepComponentEditionController.makeNLIPaths(reset=True)
+        for layer in self.RCJKI.currentGlyph.layers:
+            startGlyph = layer
+            interpolations.makeNLIPaths(self.RCJKI.pathsGlyphs, startGlyph, self.RCJKI.currentGlyph.getLayer('foreground'), reset=True)
 
     def addLayerButtonCallback(self, sender):
         g = self.RCJKI.currentGlyph
@@ -413,7 +415,6 @@ class DeepComponentEditionWindow(BaseWindowController):
     def deepComponentsSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
-        self.RCJKI.deepComponentEditionController.makeNLIPaths()
 
         self.selectedDeepComponentGlyphName = sender.get()[sel[0]]['Name']
 
@@ -428,6 +429,11 @@ class DeepComponentEditionWindow(BaseWindowController):
             self.w.colorPicker.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(r, g, b, a))
         else:
             self.RCJKI.currentGlyph = None
+        
+        for layer in self.RCJKI.currentGlyph.layers:
+            startGlyph = layer
+            interpolations.makeNLIPaths(self.RCJKI.pathsGlyphs, startGlyph, self.RCJKI.currentGlyph.getLayer('foreground'))
+    
         self.setSliderList()
 
         self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
@@ -435,6 +441,9 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
         self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
         self.w.dcOffsetYEditText.set(self.deepComponentTranslateY) 
+
+        
+
         self.w.mainCanvas.update()
 
     def extremsListCallback(self, sender):

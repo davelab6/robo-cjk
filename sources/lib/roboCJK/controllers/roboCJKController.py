@@ -542,8 +542,10 @@ class RoboCJKController(object):
 
     def getDeepComponentGlyph(self):
         if self.currentGlyph is None: return
-        self.deepComponentEditionController.makeNLIPaths()
-        return interpolations.deepolation(RGlyph(), self.currentGlyph.getLayer("foreground"), self.pathsGlyphs,  self.layersInfos)
+        for layer in self.currentGlyph.layers:
+            startGlyph = layer
+            interpolations.makeNLIPaths(self.pathsGlyphs, startGlyph, self.currentGlyph.getLayer('foreground'))
+        return interpolations.deepolation(self.pathsGlyphs, self.currentGlyph.getLayer("foreground"), self.pathsGlyphs,  self.layersInfos)
         
 
     def glyphWindowBecameMain(self, sender):

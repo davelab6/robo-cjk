@@ -16,10 +16,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 """
+from imp import reload
 from ufoLib.pointPen import PointToSegmentPen
 from fontPens.penTools import getCubicPoint
+from controllers import deepComponentEditionController
 from mojo.roboFont import *
 import math
+
+reload(deepComponentEditionController)
 
 def checkCompatible(g1, g2):
     lenghtContour = lambda g: [len(c) for c in g]
@@ -111,15 +115,25 @@ def normalize(a):
        l = 1e-10
    return([a[0]/l, a[1]/l])
 
-def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
+def deepolation(RCJKIpathsGlyphs, masterGlyph, pathsGlyphs, layersInfo = {}):
 
     if not deepCompatible(masterGlyph, list(layersInfo.keys())):
         return False
 
+    newGlyph = masterGlyph.getLayer('foreground').copy()
     pen = PointToSegmentPen(newGlyph.getPen())
     contoursList = []
-    pathsGlyph = pathsGlyphs[masterGlyph.name]
+    pathsGlyph = RCJKIpathsGlyphs[masterGlyph.name]
     allpointsIndex = 0
+
+    layersInfoList = list(layersInfo.items())
+    lenlil = len(layersInfoList)
+    layerGlyphs = []
+    for (layerName, values) in layersInfoList:
+        lGlyph = masterGlyph.getLayer(layerName).copy()
+        layerGlyphs.append(lGlyph)
+    
+
     for contourIndex, contour in enumerate(masterGlyph):
 
         pointsList = []
@@ -130,16 +144,23 @@ def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
             ptype = point.type if point.type != 'offcurve' else None
 
             deltaX, deltaY = 0.0, 0.0
-            for layerName, values in layersInfo.items():
+            
+            for i, (layerName, values) in enumerate(layersInfoList):
                 pathGlyph = None
+                nextLayerName = None
+                
+
                 if pathsGlyph:
                     pathGlyph = pathsGlyph['paths_'+layerName]
+                    if i+1 < lenlil:
+                        nextLayerName = layersInfoList[i+1][0]
+                        nextPathGlyph = pathsGlyph['paths_'+nextLayerName]
 
                 ratioX = values[0] / 1000.0
                 ratioY = values[1] / 1000.0
                 ratio = ratioX
 
-                layerGlyph = masterGlyph.getLayer(layerName)
+                layerGlyph = layerGlyphs[i] #masterGlyph.getLayer(layerName)
 
                 pI = layerGlyph[contourIndex].points[pointIndex]
                 pxI, pyI = pI.x, pI.y
@@ -152,46 +173,87 @@ def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
                     curve = [(p.x, p.y) for p in pathGlyph[allpointsIndex].points]
                     
                 nli = getCubicPoint(ratio, curve[0], curve[1], curve[2], curve[3])
-                deltaX += nli[0] - px
-                deltaY += nli[1] - py
+
+                newGlyph[contourIndex].points[pointIndex].x += nli[0] - px
+                newGlyph[contourIndex].points[pointIndex].y += nli[1] - py
+
+                # if nextLayerName:
+                #     for np in nextPathGlyph[allpointsIndex].points:
+                #         np.x += nli[0] - px
+                #         np.y += nli[1] - py 
+
+                if i+1 < lenlil:
+                    for j, (layerNameNext, valuesNext) in enumerate(layersInfoList[i+1:]):
+                        layerGlyphNext = layerGlyphs[j]
+                        print(layerGlyphNext)
+                        layerGlyphNext.newLayer(layerNameNext)
+                        layerGlyphNext = layerGlyphNext.getLayer(layerNameNext)
+                        layerGlyphNext.appendGlyph(layerGlyphs[j])
+                        layerGlyphNext[contourIndex].points[pointIndex].x += nli[0] - px
+                        layerGlyphNext[contourIndex].points[pointIndex].y += nli[1] - py
+
+                        makeNLIPaths(RCJKIpathsGlyphs, layerGlyphNext, masterGlyph, reset=True)
 
             allpointsIndex += 1
 
-            newX = int(px + deltaX)
-            newY = int(py + deltaY)
+        #     newX = int(deltaX)
+        #     newY = int(deltaY)
 
-            pointsList.append([[newX, newY], ptype, point])
+        #     pointsList.append([[newX, newY], ptype, point])
 
-        contoursList.append(pointsList)
+        # contoursList.append(pointsList)
 
-        for pointsList in contoursList:
+        # for pointsList in contoursList:
 
-            pen.beginPath()
-            lenc = len(pointsList)
+        #     pen.beginPath()
+        #     lenc = len(pointsList)
 
-            for pointIndex, (p, t, point) in enumerate(pointsList):
+        #     for pointIndex, (p, t, point) in enumerate(pointsList):
 
-                if lenc > 1:
-                    prevp, prevt, prevPoint = pointsList[pointIndex-1]
-                    prevprevp, prevprevt, prevprevPoint = pointsList[pointIndex-2]
-                    nextp, nextt, nextPoint = pointsList[(pointIndex+1)%lenc]
-                    nextnextp, nextnextt, nextnextPoint = pointsList[(pointIndex+2)%lenc]
+        #         if lenc > 1:
+        #             prevp, prevt, prevPoint = pointsList[pointIndex-1]
+        #             prevprevp, prevprevt, prevprevPoint = pointsList[pointIndex-2]
+        #             nextp, nextt, nextPoint = pointsList[(pointIndex+1)%lenc]
+        #             nextnextp, nextnextt, nextnextPoint = pointsList[(pointIndex+2)%lenc]
 
-                    if prevPoint.smooth and point.type == 'offcurve':
+        #             if prevPoint.smooth and point.type == 'offcurve':
 
-                        dx, dy = prevp[0] - prevprevp[0], prevp[1] - prevprevp[1]
-                        d = distance(p, prevp)
-                        dprev = normalize([dx, dy])
-                        p = [prevp[0]+ d*dprev[0], prevp[1]+d*dprev[1]]
+        #                 dx, dy = prevp[0] - prevprevp[0], prevp[1] - prevprevp[1]
+        #                 d = distance(p, prevp)
+        #                 dprev = normalize([dx, dy])
+        #                 p = [prevp[0]+ d*dprev[0], prevp[1]+d*dprev[1]]
 
-                    if nextPoint.smooth and point.type == 'offcurve':
+        #             if nextPoint.smooth and point.type == 'offcurve':
 
-                        dx, dy = nextp[0] - nextnextp[0], nextp[1] - nextnextp[1]
-                        d = distance(p, nextp)
-                        dnext = normalize([dx, dy])
-                        p = [nextp[0]+ d*dnext[0], nextp[1]+d*dnext[1]]
+        #                 dx, dy = nextp[0] - nextnextp[0], nextp[1] - nextnextp[1]
+        #                 d = distance(p, nextp)
+        #                 dnext = normalize([dx, dy])
+        #                 p = [nextp[0]+ d*dnext[0], nextp[1]+d*dnext[1]]
 
-                    pen.addPoint((int(p[0]), int(p[1])), t)
-            pen.endPath()
+        #             pen.addPoint((int(p[0]), int(p[1])), t)
+        #     pen.endPath()
 
     return newGlyph
+
+def makeNLIPaths(RCJKIpathsGlyphs, endGlyph, startGlyph, reset=False):
+    if not endGlyph: return
+
+    if endGlyph.name not in RCJKIpathsGlyphs or reset == True:
+        RCJKIpathsGlyphs[endGlyph.name] = {}
+
+    endName = endGlyph.layerName
+    if endName != 'foreground':
+        pathGlyph = RGlyph()
+        pathGlyph.name = 'paths_%s' % endName
+        
+        pen = pathGlyph.getPen()
+
+        for cs, ce in zip(startGlyph, endGlyph):
+            for j, p in enumerate(cs.points):
+                pen.moveTo((p.x, p.y))
+                pe = ce.points[j]
+                pen.curveTo( (p.x+(pe.x-p.x)/3.33 , p.y+(pe.y-p.y)/3.33), (p.x+2*(pe.x-p.x)/3.33 , p.y+2*(pe.y-p.y)/3.33),  (pe.x, pe.y) )
+                pen.endPath()
+
+            RCJKIpathsGlyphs[endGlyph.name][pathGlyph.name] = pathGlyph
+    

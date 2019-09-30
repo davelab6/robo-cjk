@@ -193,28 +193,6 @@ class TextCenterWindow():
             if glyphName in self.RCJKI.currentFont:
                 glyph = self.RCJKI.currentFont[glyphName].copy()
 
-    # def decomposeGlyph(self, glyph):
-
-    #     storageFont = self.ui.font2Storage[self.ui.font]
-    #     if "deepComponentsGlyph" in glyph.lib:
-
-    #         for deepComp_Name, value in glyph.lib["deepComponentsGlyph"].items():
-
-    #             ID = value[0]
-    #             offset_x, offset_Y = value[1]
-
-    #             layersInfo = storageFont.lib["deepComponentsGlyph"][deepComp_Name][ID]
-
-    #             newGlyph = deepolation(RGlyph(), storageFont[deepComp_Name].getLayer("foreground"), layersInfo)
-
-    #             if newGlyph:
-    #                 newGlyph.moveBy((offset_x, offset_Y))
-
-    #                 for c in newGlyph:
-    #                     glyph.appendContour(c)
-    #     return glyph
-
-
     def keyDown(self, info):
         char = info.characters()
         command = extractNSEvent(info)['commandDown']
