@@ -147,7 +147,6 @@ class LockerDCEGroup(Group):
         variants = []
         if self.selectedDCKey is not None:
             variants = [e[0] for e in list(self.deepComponents[self.selectedDCKey])]
-
         return variants
 
     @property
@@ -155,9 +154,14 @@ class LockerDCEGroup(Group):
         extrems = ''
         if self.selectedDCKey is not None:
             if self.selectedDCVariant is not None:
-                for e in list(self.deepComponents[self.selectedDCKey]):
-                    if e[0] != self.selectedDCVariant: continue
-                    extrems += "".join(e)
+                userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+
+                if files.unicodeName(self.selectedDCVariant) in userLocker._deepComponentsEdition_glyphs:
+                    extrems += "".join([chr(int(e[3:], 16)) for e in userLocker._deepComponentsEdition_glyphs[files.unicodeName(self.selectedDCVariant)]])
+                else:
+                    for e in list(self.deepComponents[self.selectedDCKey]):
+                        if e[0] != self.selectedDCVariant: continue
+                        extrems += "".join(e)
         return extrems
 
     def keyListSelectionCallback(self, sender):
