@@ -147,6 +147,7 @@ class LockerDCEGroup(Group):
         variants = []
         if self.selectedDCKey is not None:
             variants = [e[0] for e in list(self.deepComponents[self.selectedDCKey])]
+
         return variants
 
     @property
@@ -594,7 +595,9 @@ class EditProjectSheet():
             characterSet += charset
 
         glyphNames = [files.unicodeName(c) for c in characterSet if files.unicodeName(c) in self.previewFont.keys() and (len(self.previewFont[files.unicodeName(c)]) != 0 or self.previewFont[files.unicodeName(c)].components != [])]
-        self.previewGlyph = self.previewFont[random.choice(glyphNames)]
+        self.previewGlyph = None
+        if self.previewFont:
+            self.previewGlyph = self.previewFont[random.choice(glyphNames)]
     
     # def usersListSelectionCallback(self, sender):
     #     sel = sender.getSelection()
