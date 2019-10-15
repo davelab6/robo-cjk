@@ -16,7 +16,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 """
-from ufoLib.pointPen import PointToSegmentPen
+from fontTools.ufoLib.pointPen import PointToSegmentPen
 from fontPens.penTools import getCubicPoint
 from mojo.roboFont import *
 import math

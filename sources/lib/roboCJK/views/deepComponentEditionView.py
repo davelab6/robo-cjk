@@ -476,6 +476,7 @@ class DeepComponentEditionWindow(BaseWindowController):
             CurrentGlyphWindow().close()
         self.RCJKI.currentGlyphWindow = None
         self.RCJKI.deepComponentEditionController.interface = None
+        self.RCJKI.deepComponentGlyph =  None
         self.observer(True)
 
     def yesnocallback(self, yes):
