@@ -28,7 +28,7 @@ from utils import robocjk
 
 from mojo.UI import OpenGlyphWindow
 from mojo.events import extractNSEvent
-from ufoLib.glifLib import readGlyphFromString
+from fontTools.ufoLib.glifLib import readGlyphFromString
 
 import os
 
@@ -189,7 +189,7 @@ class MainCanvas():
                     
                     if glyphName in self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs[self.RCJKI.designStep]:
                         fill(0, 0, 0, 1)
-                    elif glyphName in self.RCJKI.lockedGlyphs[self.RCJKI.designStep]:
+                    elif glyphName in self.RCJKI.lockedGlyphs:
                         fill(1, 0, 0, 1)
                     else:
                         fill(0, 0, 0, .5)
