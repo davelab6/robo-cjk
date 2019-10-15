@@ -57,3 +57,6 @@ def normalizeUnicode(code):
 def unicodeName(char):
     return "uni" + normalizeUnicode(hex(ord(char))[2:].upper())
     
+def unique(sequence):
+    seen = set()
+    return [x for x in sequence if not (x in seen or seen.add(x))]

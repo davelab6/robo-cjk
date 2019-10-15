@@ -92,15 +92,21 @@ class CurrentGlyphViewDrawer():
                 restore()
                 restore()
 
-        if self.RCJKI.deepComponentGlyph:
-            save()
-            fill(0, 0, .8, .15)
-            translate(self.RCJKI.deepComponentEditionController.interface.deepComponentTranslateX, self.RCJKI.deepComponentEditionController.interface.deepComponentTranslateY)
-            drawGlyph(self.RCJKI.deepComponentGlyph)
-            restore()
+        if self.RCJKI.designStep == '_deepComponentsEdition_glyphs':
+            if self.RCJKI.deepComponentGlyph:
+                save()
+                fill(0, 0, .8, .15)
+                translate(self.RCJKI.deepComponentEditionController.interface.deepComponentTranslateX, self.RCJKI.deepComponentEditionController.interface.deepComponentTranslateY)
+                drawGlyph(self.RCJKI.deepComponentGlyph)
+                restore()
+            else:
+                save()
+                fill(.95, .15, .4, .8)
+                drawGlyph(g)  
+                restore()
         else:
             save()
-            fill(.95, .15, .4, .8)
+            fill(None)
             drawGlyph(g)  
             restore()
             

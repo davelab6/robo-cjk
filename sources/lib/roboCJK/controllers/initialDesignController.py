@@ -21,17 +21,20 @@ import os
 from mojo.roboFont import *
 from mojo.UI import PostBannerNotification
 from views import initialDesignView
+from resources import deepCompoMasters_AGB1_FULL
 from utils import files
 from utils import git
 reload(initialDesignView)
 reload(files)
 reload(git)
+reload(deepCompoMasters_AGB1_FULL)
 
 class InitialDesignController(object):
     def __init__(self, RCJKI):
         self.RCJKI = RCJKI
         self.interface = None
         self.characterSet = None
+        self.basicCharacterSet = None
         self.fontsList = []
         
 
@@ -44,7 +47,19 @@ class InitialDesignController(object):
             self.loadProjectFonts()
 
     def setCharacterSet(self):
-        self.characterSet = "".join([self.RCJKI.characterSets[key]['Basic'] for key in self.RCJKI.project.script])
+        self.basicCharacterSet = "".join([self.RCJKI.characterSets[key]['Basic'] for key in self.RCJKI.project.script])
+        toAdd = []
+        for script in self.RCJKI.project.script:
+            for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
+                for key, extrems in keys2extrems.items():
+                    if key not in self.basicCharacterSet:
+                        self.basicCharacterSet += key
+                    for variants in extrems:
+                        for variant in variants:
+                            toAdd.append(variant)
+                            
+        self.characterSet = self.basicCharacterSet
+        self.characterSet += "".join([c for c in files.unique(toAdd) if c not in self.characterSet])
 
     def loadProjectFonts(self):
         self.fontsList = []
@@ -94,7 +109,7 @@ class InitialDesignController(object):
             locker._addGlyphs(lck['glyphs'])
 
     def updateGlyphSetList(self):
-        self.interface.w.glyphSetList.set(self.RCJKI.getGlyphSetList(self.characterSet, self.RCJKI.designStep))
+        self.interface.w.glyphSetList.set(self.RCJKI.getGlyphSetList(self.basicCharacterSet, self.RCJKI.designStep))
 
     def injectGlyphsBack(self, glyphs, user):
         self.RCJKI.injectGlyphsBack(glyphs, user, self.RCJKI.designStep)

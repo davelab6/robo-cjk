@@ -26,7 +26,7 @@ from vanilla import *
 from vanilla.dialogs import askYesNo
 import os
 import json
-
+from resources import deepCompoMasters_AGB1_FULL
 from utils import files
 from utils import git
 from views import tableDelegate
@@ -34,6 +34,7 @@ from views import mainCanvas
 reload(files)
 reload(git)
 reload(mainCanvas)
+reload(deepCompoMasters_AGB1_FULL)
 
 class InitialDesignWindow(BaseWindowController):
     def __init__(self, controller):
@@ -53,7 +54,7 @@ class InitialDesignWindow(BaseWindowController):
                 selectionCallback = self.fontsListSelectionCallback,
                 drawFocusRing = False)
 
-        self.w.glyphSetList = List((0,85,200,-60),
+        self.w.glyphSetList = List((0,85,200,-260),
                 [],
                 columnDescriptions = [
                                 {"title": "#", "width" : 20, 'editable':False},
@@ -62,6 +63,20 @@ class InitialDesignWindow(BaseWindowController):
                                 {"title": "MarkColor", "width" : 30, 'editable':False}
                                 ],
                 selectionCallback = self.glyphSetListSelectionCallback,
+                doubleClickCallback = self.glyphSetListdoubleClickCallback,
+                # editCallback = self.glyphSetListEditCallback,
+                showColumnTitles = False,
+                drawFocusRing = False)
+
+        self.w.extremsList = List((0,-260,200,-60),
+                [],
+                columnDescriptions = [
+                                {"title": "#", "width" : 20, 'editable':False},
+                                {"title": "Char", "width" : 30, 'editable':False},
+                                {"title": "Name", "width" : 80, 'editable':False},
+                                {"title": "MarkColor", "width" : 30, 'editable':False}
+                                ],
+                selectionCallback = self.extremsListSelectionCallback,
                 doubleClickCallback = self.glyphSetListdoubleClickCallback,
                 # editCallback = self.glyphSetListEditCallback,
                 showColumnTitles = False,
@@ -119,6 +134,7 @@ class InitialDesignWindow(BaseWindowController):
         gitEngine = git.GitEngine(rootfolder)
         user = gitEngine.user()
         glyphsList = self.RCJKI.collab._userLocker(user).glyphs[self.RCJKI.designStep]
+        print(glyphsList)
         self.RCJKI.initialDesignController.injectGlyphsBack(glyphsList, user)
 
     def colorPickerCallback(self, sender):
@@ -164,10 +180,32 @@ class InitialDesignWindow(BaseWindowController):
             self.RCJKI.currentGlyph.width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
         self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
 
+    def extremsListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        self.selectedGlyphName = sender.get()[sel[0]]['Name']
+        self.resetCurrentGlyph()
+
     def glyphSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
         self.selectedGlyphName = sender.get()[sel[0]]['Name']
+        self.selectedChar = sender.get()[sel[0]]['Char']
+
+        self.extremsList = []
+        for script in self.RCJKI.project.script:
+            for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
+                if self.selectedChar in keys2extrems:
+                    for variants in keys2extrems[self.selectedChar]:
+                        for variant in variants:
+                            name = files.unicodeName(variant)
+                            self.extremsList.append(({'#':'', 'Char':variant, 'Name':name, 'MarkColor':''}))
+        self.w.extremsList.setSelection([])
+        self.w.extremsList.set(self.extremsList)
+        
+        self.resetCurrentGlyph()
+
+    def resetCurrentGlyph(self):
         if self.selectedGlyphName in self.RCJKI.currentFont:
             self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedGlyphName]
             if self.RCJKI.currentGlyph.markColor is None:
