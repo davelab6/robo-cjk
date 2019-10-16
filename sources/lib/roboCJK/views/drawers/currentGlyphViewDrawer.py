@@ -49,6 +49,21 @@ class CurrentGlyphViewDrawer():
         if info['notificationName'] == "drawPreview":
             fill(0, 0, 0, 1)
         # DeepComponentDrawer(self.ui, g, f)
+
+        if self.RCJKI.settings["referenceViewer"]["onOff"]:
+            if g.name.startswith("uni"):
+                char = chr(int(g.name[3:7],16))
+            elif g.unicode: 
+                char = chr(g.unicode)
+            else:
+                char = ""
+            if not (info['notificationName'] == "drawPreview") or (info['notificationName'] == "drawPreview") == self.RCJKI.settings["referenceViewer"]["drawPreview"]:
+                self.rvd.draw(char)
+
+        if self.RCJKI.settings["stackMasters"]:
+            self.stackMaster.draw(g, preview = info['notificationName'] == "drawPreview")
+
+
         if self.RCJKI.settings["showDesignFrame"]:
             if not (info['notificationName'] == "drawPreview") or (info['notificationName'] == "drawPreview") == self.RCJKI.settings["designFrame"]["drawPreview"]:
                 self.dfd.draw(
@@ -110,19 +125,7 @@ class CurrentGlyphViewDrawer():
             drawGlyph(g)  
             restore()
             
-        if self.RCJKI.settings["referenceViewer"]["onOff"]:
-            if g.name.startswith("uni"):
-                char = chr(int(g.name[3:7],16))
-            elif g.unicode: 
-                char = chr(g.unicode)
-            else:
-                char = ""
-            if not (info['notificationName'] == "drawPreview") or (info['notificationName'] == "drawPreview") == self.RCJKI.settings["referenceViewer"]["drawPreview"]:
-                self.rvd.draw(char)
-
-        if self.RCJKI.settings["stackMasters"]:
-            self.stackMaster.draw(g, preview = info['notificationName'] == "drawPreview")
-
+        
         self.powerRuler.draw(self.scale)
 
         if self.RCJKI.inspectorController.interface is not None:
