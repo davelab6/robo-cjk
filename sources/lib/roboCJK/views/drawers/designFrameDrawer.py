@@ -84,7 +84,7 @@ class DesignFrameDrawer():
 
     def findProximity(self, pos, point, left=0, right=0):
         for p in pos:
-            if p+left <= point < p+right:
+            if p+left < point < p+right:
                 return True
         return False
 
