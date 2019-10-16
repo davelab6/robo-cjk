@@ -181,7 +181,7 @@ class DeepComponentEditionController(object):
 
     def loadProjectFonts(self):
         self.fontsList = []
-        self.RCJKI.allFonts = []
+        # self.RCJKI.allFonts = []
         self.RCJKI.fonts2DCFonts = {}
         self.RCJKI.DCFonts2Fonts = {}
         # print(self.RCJKI.collab._userLocker(self.RCJKI.user).script)
@@ -191,7 +191,7 @@ class DeepComponentEditionController(object):
 
             path = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Masters', file)
 
-            deepComponentGlyphsKeyAndXtremSavepath = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Temp', 'DeepComponents', script, "KeyAndExtremeCharacters", file)
+            Masterspath = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Masters', file)
             deepComponentGlyphsSubsetSavepath = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Temp', 'DeepComponents', script, "DeepComponentsGlyphs", file)
             deepComponentGlyphsMasterSavepath = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'DeepComponents', script, file)
 
@@ -226,69 +226,24 @@ class DeepComponentEditionController(object):
                 masterDeepComponentsGlyphs = OpenFont(deepComponentGlyphsMasterSavepath, showInterface = False)
 
             #### KEYS AND EXTREMES CHARACTERS -> Temp/DeepComponents/Edition/*script*/KeyAndExtremeCharacters/*.ufo
-            if not os.path.isdir(deepComponentGlyphsKeyAndXtremSavepath):
-                files.makepath(deepComponentGlyphsKeyAndXtremSavepath)
-                
-                keyAndXtremChars = NewFont(familyName=f.info.familyName, styleName=f.info.styleName, showInterface=False)
-                
-                for c in self.characterSet:
-                    glyphName = files.unicodeName(c)
-                    if glyphName in f:
-                        keyAndXtremChars.insertGlyph(f[glyphName])
 
-                for char in self.RCJKI.characterSets[script]['DeepComponentKeys']:
-                    for l in deepCompoMasters_AGB1_FULL.deepCompoMasters[script][char]:
-                        for c in l:
-                            glyphName = files.unicodeName(c)
-                            if glyphName in f:
-                                keyAndXtremChars.insertGlyph(f[glyphName])
+            MastersFont = OpenFont(Masterspath, showInterface=False)
 
-                keyAndXtremChars.save(deepComponentGlyphsKeyAndXtremSavepath)
-            else:
-                keyAndXtremChars = OpenFont(deepComponentGlyphsKeyAndXtremSavepath, showInterface=False)
-                
-                glyphOrder = []
-                for c in self.characterSet:
-                    glyphName = files.unicodeName(c)
-                    glyphOrder.append(glyphName)
-                keyAndXtremChars.glyphOrder = glyphOrder
-                keyAndXtremChars.save()
-
-            self.RCJKI.allFonts.append({name:keyAndXtremChars})
+            self.RCJKI.allFonts.append({name:MastersFont})
             self.fontsList.append(name)
 
             #### DEEP COMPONENTS GLYPHS -> Temp/DeepComponents/Edition/*script*/DeepComponentsGlyphs/*.ufo
             if not os.path.isdir(deepComponentGlyphsSubsetSavepath):
                 files.makepath(deepComponentGlyphsSubsetSavepath)
 
-                # deepComponentsGlyphs = NewFont(familyName=f.info.familyName, styleName=f.info.styleName, showInterface=False)
                 deepComponentsGlyphs = OpenFont(deepComponentGlyphsMasterSavepath, showInterface = False)
                 deepComponentsGlyphs.save(deepComponentGlyphsSubsetSavepath)
 
-                # for layer in masterDeepComponentsGlyphs.layers:
-                #     deepComponentsGlyphs.newLayer(layer.name)
-
-                # for glyph in masterDeepComponentsGlyphs:
-                #     for i in range(30):
-                #         deepComponentsGlyphs.getLayer(str(i)).insertGlyph(glyph)
-                        # deepComponentsGlyphs.getLayer(str(i))[glyph.name].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
-
-
-                # DCGlyphsSet = []
-                # lockerGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs["_deepComponentsEdition_glyphs"]
-                # for glyphName in lockerGlyphs:
-                #     DCGlyphsSet.extend(list(filter(lambda x: glyphName[3:] in x, list(masterDeepComponentsGlyphs.keys()))))
-
-                # for glyphName in DCGlyphsSet:
-                #     for layer in masterDeepComponentsGlyphs.layers:
-                #         deepComponentsGlyphs.getLayer(layer.name).insertGlyph(masterDeepComponentsGlyphs[glyphName].getLayer(layer.name))
-                
-                # deepComponentsGlyphs.save(deepComponentGlyphsSubsetSavepath)
             else:
                 deepComponentsGlyphs = OpenFont(deepComponentGlyphsSubsetSavepath, showInterface=False)
 
-            self.RCJKI.fonts2DCFonts[keyAndXtremChars] = deepComponentsGlyphs
-            self.RCJKI.DCFonts2Fonts[deepComponentsGlyphs] = keyAndXtremChars
+            self.RCJKI.fonts2DCFonts[MastersFont] = deepComponentsGlyphs
+            self.RCJKI.DCFonts2Fonts[deepComponentsGlyphs] = MastersFont
 
             f.close()
             masterDeepComponentsGlyphs.close()
