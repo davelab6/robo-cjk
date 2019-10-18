@@ -42,6 +42,7 @@ from utils import git
 from utils import interpolations
 from views import tableDelegate
 from utils import files
+from functools import reduce
 import Quartz
 from fontTools.pens import cocoaPen
 
@@ -499,6 +500,8 @@ class RoboCJKController(object):
                     f = self.projectFonts[name]
                     for glyphName in glyphs:
                         if glyphName in self.reservedGlyphs[step] and glyphName in subsetFont:
+                            f.insertGlyph(subsetFont[glyphName].naked())
+                        elif glyphName in list(reduce(lambda x, y: x + y, list(self.reservedGlyphs[step].values()))) and glyphName in subsetFont:
                             f.insertGlyph(subsetFont[glyphName].naked())
                     f.save()
 

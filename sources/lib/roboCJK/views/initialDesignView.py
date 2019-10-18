@@ -31,6 +31,7 @@ from utils import files
 from utils import git
 from views import tableDelegate
 from views import mainCanvas
+from functools import reduce
 reload(files)
 reload(git)
 reload(mainCanvas)
@@ -133,8 +134,10 @@ class InitialDesignWindow(BaseWindowController):
         rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
         gitEngine = git.GitEngine(rootfolder)
         user = gitEngine.user()
-        glyphsList = self.RCJKI.collab._userLocker(user).glyphs[self.RCJKI.designStep]
-        print(glyphsList)
+        List = self.RCJKI.collab._userLocker(user).glyphs[self.RCJKI.designStep]
+        
+        glyphsList = list(List.keys()) + list(reduce(lambda x, y: x + y, list(List.values())))
+        # print(glyphsList)
         self.RCJKI.initialDesignController.injectGlyphsBack(glyphsList, user)
 
     def colorPickerCallback(self, sender):
@@ -192,16 +195,34 @@ class InitialDesignWindow(BaseWindowController):
         self.selectedGlyphName = sender.get()[sel[0]]['Name']
         self.selectedChar = sender.get()[sel[0]]['Char']
 
+
+
+
         self.extremsList = []
-        for script in self.RCJKI.project.script:
-            for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
-                if self.selectedChar in keys2extrems:
-                    for variants in keys2extrems[self.selectedChar]:
-                        for variant in variants:
-                            name = files.unicodeName(variant)
-                            self.extremsList.append(({'#':'', 'Char':variant, 'Name':name, 'MarkColor':''}))
+        rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
+        gitEngine = git.GitEngine(rootfolder)
+        user = gitEngine.user()
+        userGlyphsList = self.RCJKI.collab._userLocker(user).glyphs[self.RCJKI.designStep]
+        if self.selectedGlyphName in userGlyphsList:
+            for name in userGlyphsList[self.selectedGlyphName]:
+                char = chr(int(name[3:], 16))
+                self.extremsList.append(({'#':'', 'Char':char, 'Name':name, 'MarkColor':''}))
+            
+        
         self.w.extremsList.setSelection([])
         self.w.extremsList.set(self.extremsList)
+
+
+        # self.extremsList = []
+        # for script in self.RCJKI.project.script:
+        #     for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
+        #         if self.selectedChar in keys2extrems:
+        #             for variants in keys2extrems[self.selectedChar]:
+        #                 for variant in variants:
+        #                     name = files.unicodeName(variant)
+        #                     self.extremsList.append(({'#':'', 'Char':variant, 'Name':name, 'MarkColor':''}))
+        # self.w.extremsList.setSelection([])
+        # self.w.extremsList.set(self.extremsList)
         
         self.resetCurrentGlyph()
 

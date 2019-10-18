@@ -223,6 +223,174 @@ class LockerDCEGroup(Group):
         self.user = sender.get()[sel[0]]
         self.keyList.set(self.deepComponentKeys)
 
+class LockerIDGroup(Group):
+
+    def __init__(self, posSize, controller, step):
+        super(LockerIDGroup, self).__init__(posSize)
+        self.c = controller
+        self.step = step
+        self.script = "Hanzi"
+
+        self.user = None
+        usersList = [d['user'] for d in self.c.parent.RCJKI.project.usersLockers['lockers']]
+        if usersList:
+            self.user = usersList[0]
+
+        self.usersList = List((10, 40, 280, 65),
+                usersList,
+                selectionCallback = self.usersListSelectionCallback,
+                drawFocusRing = False
+                ) 
+
+        ####NEW####
+        self.selectedChar = None
+
+        checkBox = CheckBoxListCell()
+        self.basicGlyphsList = List((10, 125, 280, -40),
+            self.basicGlyphs,
+            columnDescriptions = [{"title": "sel", "cell":checkBox, "width":30}, {"title": "char"}],
+            selectionCallback = self.basicGlyphsListSelectionCallback,
+            editCallback = self.basicGlyphsListEditCallback,
+            drawFocusRing = False,
+            showColumnTitles = False
+            )
+
+
+        self.extremsList = TextEditor((300, 125, -10, -40),
+            self.extremsGlyphs(None),
+            callback = self.extremsListCallback
+            )
+
+        self.basicGlyphsList.setSelection([])
+
+    @property
+    def basicGlyphs(self):
+        if self.user is None:
+            return []
+        userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+        return [dict(char = c, sel = files.unicodeName(c) in userLocker.glyphs[self.step]) for c in characterSets.sets[self.script]['Basic']]
+        # if not self.user+"\n" in [e._toDict['user'] for e in self.c.parent.RCJKI.collab.lockers]:
+        #     userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+        # else:
+        #     userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+        # return [dict(sel = files.unicodeName(e) in userLocker.glyphs[self.step], char = e) for e in list(self.deepComponents.keys())]
+
+
+    
+    def extremsGlyphs(self, char):
+        extrems = ""
+        if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
+            for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
+                extrems += "".join(variant)
+        return extrems
+# 
+    # def getExtrem(self, char):
+
+    #     extrems = ''
+    #     if self.selectedDCKey is not None:
+    #         if self.selectedDCVariant is not None:
+    #             userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+
+    #             if files.unicodeName(self.selectedDCVariant) in userLocker._deepComponentsEdition_glyphs:
+    #                 extrems += "".join([chr(int(e[3:], 16)) for e in userLocker._deepComponentsEdition_glyphs[files.unicodeName(self.selectedDCVariant)]])
+    #             else:
+    #                 for e in list(self.deepComponents[self.selectedDCKey]):
+    #                     if e[0] != self.selectedDCVariant: continue
+    #                     extrems += "".join(e)
+    #     return extrems
+
+    def extremsListCallback(self, sender):
+        pass
+
+    def basicGlyphsListEditCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        glyphs = {}
+        for k in sender.get():
+            if not k["sel"]: continue
+            char = k["char"]
+            glyphs[files.unicodeName(char)] = [files.unicodeName(c) for c in self.extremsGlyphs(char)]
+
+        userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+        
+        userLocker._setAttr(self.step)
+        userLocker._clearGlyphs()
+        userLocker._addGlyphs(glyphs)
+        userLocker._setScript(self.script)
+        self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
+
+        # self.setSelectedDCKey(sender)
+
+    def basicGlyphsListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: 
+            self.selectedChar = None
+            return 
+        self.selectedChar = sender.get()[sel[0]]["char"]
+        
+        self.extremsList.set(self.extremsGlyphs(self.selectedChar))
+        # deepCompoMasters_AGB1_FULL
+
+
+    # def keyListSelectionCallback(self, sender):
+    #     self.setSelectedDCKey(sender)      
+
+    # def variantListSelectionCallback(self, sender):
+    #     self.selectedDCVariant = None
+    #     sel = sender.getSelection()
+    #     if sel:
+    #         self.selectedDCVariant = sender.get()[sel[0]]
+
+    #     self.extremsList.set(self.extremsDCGlyphs)
+
+    # def setSelectedDCKey(self, sender):
+    #     sel = sender.getSelection()
+    #     self.selectedDCKey = None
+    #     if sel:
+    #         if self.deepComponentKeys[sender.getSelection()[0]]["sel"]:
+    #             self.selectedDCKey = self.deepComponentKeys[sender.getSelection()[0]]["char"]
+
+    #     self.variantList.set(self.deepComponentVariants)
+    #     self.addVariantButton.show(len(self.deepComponentVariants) != 0)
+    #     self.removeVariantButton.show(len(self.deepComponentVariants) != 0)
+    #     self.extremsList.set(self.extremsDCGlyphs)
+
+    # def addVariantButtonCallback(self, sender):
+    #     pass
+
+    # def removeVariantButtonCallback(self, sender):
+    #     pass
+
+    # def extremsListCallback(self, sender):
+    #     pass
+
+    # def keyListEditCallback(self, sender):
+    #     sel = sender.getSelection()
+    #     if not sel: return
+    #     glyphs = {}
+    #     for k in sender.get():
+    #         if not k["sel"]: continue
+    #         char = k["char"]
+    #         var = {files.unicodeName(e[0]):[files.unicodeName(i) for i in e] for e in list(self.deepComponents[char])}
+    #         glyphs = dict(var, **glyphs)
+
+    #     userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+        
+    #     userLocker._setAttr(self.step)
+    #     userLocker._clearGlyphs()
+    #     userLocker._addGlyphs(glyphs)
+    #     userLocker._setScript(self.script)
+    #     self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
+
+    #     self.setSelectedDCKey(sender)
+
+    ####OLD
+    def usersListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        self.user = sender.get()[sel[0]]
+        self.basicGlyphsList.set(self.basicGlyphs)
+
 class LockerGroup(Group):
 
     def __init__(self, posSize, controller, step):
@@ -375,7 +543,7 @@ class EditProjectSheet():
             )
         self.parent.sheet.lockerGroup.lockerDesignStepSegmentedButton.set(0)
 
-        self.parent.sheet.lockerGroup.initialDesign = LockerGroup((0, 0, -0, -0), self, "_initialDesign_glyphs")
+        self.parent.sheet.lockerGroup.initialDesign = LockerIDGroup((0, 0, -0, -0), self, "_initialDesign_glyphs")
         # self.parent.sheet.lockerGroup.keysAndExtrems = LockerGroup((0, 0, -0, -0), self, "_keysAndExtrems_glyphs")
         # self.parent.sheet.lockerGroup.keysAndExtrems.show(0)
         self.parent.sheet.lockerGroup.deepComponentEdition = LockerDCEGroup((0, 0, -0, -0), self, "_deepComponentsEdition_glyphs")

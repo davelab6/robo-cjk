@@ -16,9 +16,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 """
+from functools import reduce
+
 steps = {
         "_initialDesign_glyphs": 
-            "set", 
+            "dict", 
         "_deepComponentsEdition_glyphs": 
             "dict",
         "_deepComponentsInstantiation_glyphs": 
@@ -84,8 +86,17 @@ class Locker(object):
             for step in steps:
                 for glyph in getattr(locker, step):
                     if step not in s.keys(): s[step] = set()
+                    if not self.glyphs[step]: continue
+
                     if glyph not in self.glyphs[step]:
                         s[step].add(glyph)
+
+                if isinstance(getattr(locker, step), dict):
+                    for value in getattr(locker, step).values():
+                        for glyph in value:
+                            if self.glyphs[step].values():
+                                if glyph not in reduce(lambda x, y: x + y, list(self.glyphs[step].values())):
+                                    s[step].add(glyph)
         return s
     
     @property
@@ -99,8 +110,10 @@ class Locker(object):
                 getattr(self, self._step).add(glyph)
 
         elif steps[self._step] == "dict":
-            for glyph, values in glyphs.items():
-                if self._step in self._allOtherLockedGlyphs and glyph in self._allOtherLockedGlyphs[self._step]: continue
+            for glyph, values in glyphs.items(): 
+                if self._step in self._allOtherLockedGlyphs:
+                    if glyph in self._allOtherLockedGlyphs[self._step]: continue
+                    values = [v for v in values if v not in self._allOtherLockedGlyphs[self._step]]
                 getattr(self, self._step)[glyph] = values
 
     def _clearGlyphs(self):
