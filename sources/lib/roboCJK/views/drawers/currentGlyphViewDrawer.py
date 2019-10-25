@@ -78,35 +78,68 @@ class CurrentGlyphViewDrawer():
                     )
 
         if self.RCJKI.activeNLI:
-            if g.name in self.RCJKI.pathsGlyphs:
-                pathsGlyph = self.RCJKI.pathsGlyphs[g.name]
-                if 'paths_'+g.layerName in pathsGlyph:
-                    pathGlyph = pathsGlyph['paths_'+g.layerName]
-                    save()
-                    for c in pathGlyph:
-                        newPath()
-                        moveTo((c[0][0].x, c[0][0].y))
-                        for s in c:
-                            lineTo((s[0].x, s[0].y))
-                            for p in s:
-                                lineTo((p.x, p.y))
-                                if p.type =='offcurve':
-                                    save()
-                                    fill(1, 0, 0, 1)
-                                    stroke(None)
-                                    oval(p.x-5, p.y-5, 10, 10)
-                                    restore()
+            # if g.name in self.RCJKI.pathsGlyphs:
+            layers = []
+            start = g.getLayer('foreground')
+            for end in g.layers:
+                endName = end.layerName
+                if endName == 'foreground': continue
+                if len(end) == 0: continue
+                if not "NLIPoints" in end.lib: continue
+                layers.append(end)
+
+
+            for ci, c in enumerate(g):
+                for pi, p in enumerate(c.points):
+                    # for layer in layers:
+                    nli = g.lib["NLIPoints"]
+
+                    for pn in nli[ci][pi]:
                         save()
-                        fill(None)
-                        stroke(1, 0, 0, .3)     
-                        drawPath()
+                        fill(1, 0, 0, 1)
+                        stroke(None)
+                        oval(pn[0]-5, pn[1]-5, 10, 10)
                         restore()
+
                     save()
                     fill(None)
                     stroke(1, 0, 0, 1)
-                    drawGlyph(pathGlyph)
+                    newPath()
+                    moveTo((start[ci].points[pi].x, start[ci].points[pi].y))
+                    curveTo(nli[ci][pi][0], nli[ci][pi][1], (p.x, p.y))
+                    drawPath()
                     restore()
-                    restore()
+
+
+
+            # pathsGlyph = self.RCJKI.pathsGlyphs[g.name]
+            # if 'paths_'+g.layerName in pathsGlyph:
+            #     pathGlyph = pathsGlyph['paths_'+g.layerName]
+            #     save()
+            #     for c in pathGlyph:
+            #         newPath()
+            #         moveTo((c[0][0].x, c[0][0].y))
+            #         for s in c:
+            #             lineTo((s[0].x, s[0].y))
+            #             for p in s:
+            #                 lineTo((p.x, p.y))
+            #                 if p.type =='offcurve':
+            #                     save()
+            #                     fill(1, 0, 0, 1)
+            #                     stroke(None)
+            #                     oval(p.x-5, p.y-5, 10, 10)
+            #                     restore()
+            #         save()
+            #         fill(None)
+            #         stroke(1, 0, 0, .3)     
+            #         drawPath()
+            #         restore()
+            #     save()
+            #     fill(None)
+            #     stroke(1, 0, 0, 1)
+            #     drawGlyph(pathGlyph)
+            #     restore()
+            #     restore()
 
         if self.RCJKI.designStep == '_deepComponentsEdition_glyphs':
             if self.RCJKI.deepComponentGlyph:

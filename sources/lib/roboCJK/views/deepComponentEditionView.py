@@ -158,8 +158,9 @@ class DeepComponentEditionWindow(BaseWindowController):
             self.slidersValuesList,
             columnDescriptions = [
                                     {"title": "Layer", "editable": False, "width": 0},
-                                    {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
+                                    
                                     {"title": "Values", "cell": slider, "width": 410},
+                                    {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
                                     {"title": "NLI", "cell": PopUpButtonListCell(["NLI", "Reset NLI", "Update NLI"]), "binding": "selectedValue", "width": 100}
                                     # {"title": "Lock", "cell": checkbox, "width": 20},
                                    # {"title": "YValue", "cell": slider, "width": 250},

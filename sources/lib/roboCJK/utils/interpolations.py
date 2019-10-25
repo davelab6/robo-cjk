@@ -111,16 +111,20 @@ def normalize(a):
        l = 1e-10
    return([a[0]/l, a[1]/l])
 
-def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
+def deepolation(newGlyph, 
+                masterGlyph, 
+                # pathsGlyphs, 
+                layersInfo = {}
+                ):
 
     if not deepCompatible(masterGlyph, list(layersInfo.keys())):
         return False
 
     pen = PointToSegmentPen(newGlyph.getPen())
     contoursList = []
-    pathsGlyph = None
-    if masterGlyph.name in pathsGlyphs:
-        pathsGlyph = pathsGlyphs[masterGlyph.name]
+    # pathsGlyph = None
+    # if masterGlyph.name in pathsGlyphs:
+    #     pathsGlyph = pathsGlyphs[masterGlyph.name]
     allpointsIndex = 0
     for contourIndex, contour in enumerate(masterGlyph):
 
@@ -133,14 +137,16 @@ def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
 
             deltaX, deltaY = 0.0, 0.0
             for layerName, value in layersInfo.items():
-                pathGlyph = None
-                if pathsGlyph:
-                    pathGlyph = pathsGlyph['paths_'+layerName]
+                # pathGlyph = None
+                # if pathsGlyph:
+                #     pathGlyph = pathsGlyph['paths_'+layerName]
 
                 ratio = value / 1000.0
                 # ratioY = values[1] / 1000.0
 
                 layerGlyph = masterGlyph.getLayer(layerName)
+
+                pathGlyph = layerGlyph.lib['NLIPoints']
 
                 pI = layerGlyph[contourIndex].points[pointIndex]
                 pxI, pyI = pI.x, pI.y
@@ -150,7 +156,13 @@ def deepolation(newGlyph, masterGlyph, pathsGlyphs, layersInfo = {}):
                 n = normalize((-dy, dx))
                 curve = ((px, py), (px+dx/3+n[0]*50, py+dy/3+n[1]*50), (px+dx*2/3+n[0]*50, py+dy*2/3+n[1]*50), (pxI, pyI))
                 if pathGlyph:
-                    curve = [(p.x, p.y) for p in pathGlyph[allpointsIndex].points]
+                    # curve = [(p.x, p.y) for p in pathGlyph[allpointsIndex].points]
+                    curve = [
+                        (px, py),
+                        (pathGlyph[contourIndex][pointIndex][0][0], pathGlyph[contourIndex][pointIndex][0][1]),
+                        (pathGlyph[contourIndex][pointIndex][1][0],pathGlyph[contourIndex][pointIndex][1][1]),
+                        (pxI, pyI),
+                        ]
                     
                 nli = getCubicPoint(ratio, curve[0], curve[1], curve[2], curve[3])
                 deltaX += nli[0] - px

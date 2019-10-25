@@ -255,25 +255,39 @@ class DeepComponentEditionController(object):
         g = self.RCJKI.currentGlyph
         if not g: return
         if g.name in self.RCJKI.pathsGlyphs and reset == False: return
-        pathsGlyphs = {}
+        # pathsGlyphs = {}
         start = g.getLayer('foreground')
         for end in g.layers:
             endName = end.layerName
             if endName == 'foreground': continue
             if len(end) == 0: continue
-            pathGlyph = RGlyph()
-            pathGlyph.name = 'paths_%s' % endName
-            
-            pen = pathGlyph.getPen()
 
-            for cs, ce in zip(start, end):
-                for j, p in enumerate(cs.points):
-                    pen.moveTo((p.x, p.y))
-                    pe = ce.points[j]
-                    pen.curveTo( (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3),  (pe.x, pe.y) )
-                    pen.endPath()
+            # pathGlyph = RGlyph()
+            # pathGlyph.name = 'paths_%s' % endName
             
-            pathsGlyphs[pathGlyph.name] = pathGlyph
+            # pen = pathGlyph.getPen()
 
-        self.RCJKI.pathsGlyphs[g.name] = pathsGlyphs
+            if reset or "NLIPoints" not in end.lib:
+                offList = []
+
+                for cs, ce in zip(start, end):
+                    of = []
+                    for j, p in enumerate(cs.points):
+                        # pen.moveTo((p.x, p.y))
+                        pe = ce.points[j]
+                        # pen.curveTo( (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3),  (pe.x, pe.y) )
+                        # pen.endPath()
+
+                        of.append([
+                            (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), 
+                            (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3)
+                            ])
+                    offList.append(of)
+                # pathsGlyphs[pathGlyph.name] = pathGlyph
+
+                end.lib["NLIPoints"] = offList
+            # print(end.lib["NLIPoints"])
+
+        # self.RCJKI.pathsGlyphs[g.name] = pathsGlyphs
+        # print(self.RCJKI.pathsGlyphs)
 
