@@ -546,14 +546,13 @@ class RoboCJKController(object):
                 if doodleGlyph.name in self.currentFont.keys():
                     self.currentGlyph = self.currentFont[doodleGlyph.name].getLayer(layerName)
         else:
-            self.currentGlyphWindow = None
+            self.currentGlyph = None
         return self.currentGlyph
 
     def getDeepComponentGlyph(self):
         if self.currentGlyph is None: return
         self.deepComponentEditionController.makeNLIPaths()
         return interpolations.deepolation(RGlyph(), self.currentGlyph.getLayer("foreground"), self.pathsGlyphs, self.layersInfos)
-        
 
     def glyphWindowBecameMain(self, sender):
         self.getCurrentGlyph()
