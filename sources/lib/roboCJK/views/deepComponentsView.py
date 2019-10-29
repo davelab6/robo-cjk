@@ -55,4 +55,5 @@ class DeepComponentsWindow(BaseWindowController):
         self.RCJKI.deepComponentEditionController.launchDeepComponentEditionInterface()
 
     def deepComponentInstantiationButtonCallback(self, sender):
-        pass
+        self.RCJKI.closeDesignControllers()
+        self.RCJKI.deepComponentInstantiationController.launchDeepComponentInstantiationInterface()

@@ -37,6 +37,10 @@ reload(git)
 reload(mainCanvas)
 reload(deepCompoMasters_AGB1_FULL)
 
+from utils import decorators
+reload(decorators)
+refreshMainCanvas = decorators.refreshMainCanvas
+
 class InitialDesignWindow(BaseWindowController):
     def __init__(self, controller):
         super(InitialDesignWindow, self).__init__()
@@ -122,13 +126,15 @@ class InitialDesignWindow(BaseWindowController):
         self.w.open()
 
 
+    @refreshMainCanvas
     def saveLocalFontButtonCallback(self, sender):
         self.RCJKI.saveAllSubsetFonts()
-        self.w.mainCanvas.update()
+        # self.w.mainCanvas.update()
         
+    @refreshMainCanvas
     def pullMasterGlyphsButtonCallback(self, sender):
         self.RCJKI.initialDesignController.pullMastersGlyphs()
-        self.w.mainCanvas.update()
+        # self.w.mainCanvas.update()
 
     def pushBackButtonCallback(self, sender):
         rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
@@ -226,6 +232,7 @@ class InitialDesignWindow(BaseWindowController):
         
         self.resetCurrentGlyph()
 
+    @refreshMainCanvas
     def resetCurrentGlyph(self):
         if self.selectedGlyphName in self.RCJKI.currentFont:
             self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedGlyphName]
@@ -236,7 +243,7 @@ class InitialDesignWindow(BaseWindowController):
             self.w.colorPicker.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(r, g, b, a))
         else:
             self.RCJKI.currentGlyph = None
-        self.w.mainCanvas.update()
+        # self.w.mainCanvas.update()
 
     def windowCloses(self, sender):
         # askYesNo('Do you want to save fonts?', "Without saving you'll loose unsaved modification", alertStyle = 2, parentWindow = None, resultCallback = self.yesnocallback)
@@ -249,6 +256,7 @@ class InitialDesignWindow(BaseWindowController):
         if yes:
             self.RCJKI.saveAllSubsetFonts()
 
+    @refreshMainCanvas
     def windowBecameMain(self, sender):
         sel = self.w.glyphSetList.getSelection()
         if not sel: return
@@ -258,7 +266,7 @@ class InitialDesignWindow(BaseWindowController):
         else:
             self.RCJKI.currentGlyph = None
         self.RCJKI.inspectorController.updateViews()
-        self.w.mainCanvas.update()
+        # self.w.mainCanvas.update()
 
     def tableView_dataCellForTableColumn_row_(self, tableView, tableColumn, row, designStep, glist):
         self.RCJKI.tableView_dataCellForTableColumn_row_(tableView, tableColumn, row, self.w, glist, designStep, self.RCJKI.currentFont)

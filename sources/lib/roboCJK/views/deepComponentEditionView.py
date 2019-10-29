@@ -47,6 +47,10 @@ reload(mainCanvas)
 reload(deepCompoMasters_AGB1_FULL)
 reload(interpolations)
 
+from utils import decorators
+reload(decorators)
+refreshMainCanvas = decorators.refreshMainCanvas
+
 class DeepComponentEditionWindow(BaseWindowController):
 
     def __init__(self, controller):
@@ -225,19 +229,19 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
         self.w.dcOffsetYEditText.set(self.deepComponentTranslateY)
 
+    @refreshMainCanvas
     def dcOffsetXEditTextCallback(self, sender):
         try:
             self.deepComponentTranslateX = int(sender.get())
         except:
             sender.set(self.deepComponentTranslateX)
-        self.w.mainCanvas.update()
 
+    @refreshMainCanvas
     def dcOffsetYEditTextCallback(self, sender):
         try:
             self.deepComponentTranslateY = int(sender.get())
         except:
             sender.set(self.deepComponentTranslateY)
-        self.w.mainCanvas.update()
 
     def addNLIButtonCallback(self, sender):
         self.RCJKI.deepComponentEditionController.makeNLIPaths(reset=True)
@@ -265,6 +269,7 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.RCJKI.updateViews()
         # self.setSliderList()
 
+    @refreshMainCanvas
     def removeLayerButtonCallback(self, sender):
         sel = self.w.slidersList.getSelection()
         if not sel:
@@ -280,19 +285,18 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
 
         self.w.slidersList.set(self.slidersValuesList)
-        self.w.mainCanvas.update()
 
+    @refreshMainCanvas
     def saveLocalFontButtonCallback(self, sender):
         self.RCJKI.deepComponentEditionController.saveSubsetFonts()
-        self.w.mainCanvas.update()
-        
+     
+    @refreshMainCanvas   
     def pullMasterGlyphsButtonCallback(self, sender):
         self.controller.pullDCMasters()
-        self.w.mainCanvas.update()
 
+    @refreshMainCanvas
     def pushBackButtonCallback(self, sender):
         self.controller.pushDCMasters()
-        self.w.mainCanvas.update()
 
     def windowBecameMain(self, sender):
         self.updateImageSliderList()
@@ -405,6 +409,7 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.RCJKI.currentFont = self.RCJKI.fonts2DCFonts[self.RCJKI.allFonts[sel[0]][self.controller.fontsList[sel[0]]]]
         self.controller.updateGlyphSetList()
 
+    @refreshMainCanvas
     def glyphSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
@@ -413,7 +418,6 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
         self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
         self.w.dcOffsetYEditText.set(self.deepComponentTranslateY)
-        self.w.mainCanvas.update()
 
     def glyphSetListdoubleClickCallback(self, sender):
         sel = sender.getSelection()
@@ -421,6 +425,7 @@ class DeepComponentEditionWindow(BaseWindowController):
         selectedGlyphName = sender.get()[sel[0]]['Name']
         self.RCJKI.openGlyphWindow(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][selectedGlyphName])
 
+    @refreshMainCanvas
     def deepComponentsSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
@@ -446,7 +451,6 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
         self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
         self.w.dcOffsetYEditText.set(self.deepComponentTranslateY) 
-        self.w.mainCanvas.update()
 
     def extremsListCallback(self, sender):
         char = sender.getItem()

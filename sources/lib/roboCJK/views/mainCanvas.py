@@ -261,4 +261,4 @@ class MainCanvas():
                     # TesterDeepComponent(self.ui, self.ui.w.deepComponentGroup.creator.storageFont_Glyphset)
             restore()
         except Exception as e:
-            print("maincanvasDrawer ", e)
+            raise e

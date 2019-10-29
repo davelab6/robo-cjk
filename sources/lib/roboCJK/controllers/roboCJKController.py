@@ -29,6 +29,7 @@ from views import textCenterView
 from controllers import projectEditorController
 from controllers import initialDesignController
 from controllers import deepComponentEditionController
+from controllers import deepComponentInstantiationController
 from controllers import keysAndExtremsEditionController
 from controllers import deepComponentsController
 from controllers import inspectorController
@@ -53,6 +54,7 @@ reload(textCenterView)
 reload(projectEditorController)
 reload(initialDesignController)
 reload(deepComponentEditionController)
+reload(deepComponentInstantiationController)
 reload(keysAndExtremsEditionController)
 reload(deepComponentsController)
 reload(inspectorController)
@@ -66,13 +68,11 @@ reload(shapeTool)
 reload(scalingEditTool)
 reload(interpolations)
 
-
 commandDown = 1048576
 shiftDown = 131072
 capLockDown = 65536
 controlDown = 262144
 optionDown = 524288
-
 
 kMissingColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 1)
 kThereColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 1, 0, 1)
@@ -81,75 +81,11 @@ kLockedColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(1, 0, 0, 1)
 kFreeColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 1)
 kReservedColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 1, 1)
 
-# class PointLocation(object):
-#     def __init__(self, rfPoint, cont, seg, idx):
-#         p = Point(rfPoint)
-#         self.pos = p
-#         self.rfPoint = rfPoint
-#         self.cont = cont
-#         self.seg = seg
-#         self.idx = idx
-
-# class Point(object):
-#     __slots__ = ('x', 'y')
-#     def __init__(self, ix=0.0, iy=0.0):
-#         self.x = ix
-#         self.y = iy
-#     def __len__(self): return 2
-#     def __getitem__(self, i):
-#         if i == 0:
-#             return self.x
-#         elif i == 1:
-#             return self.y
-#         else:
-#             raise IndexError("coordinate index {} out of range [0,1]".format(i))
-#     def __repr__(self):
-#         return "({:f},{:f})".format(self.x, self.y)
-#     def __str__(self):
-#         return self.__repr__()
-#     def __add__(self, rhs): # rhs = right hand side
-#         return Point(self.x + rhs.x, self.y + rhs.y)
-#     def __sub__(self, rhs):
-#         return Point(self.x - rhs.x, self.y - rhs.y)
-#     def __or__(self, rhs): # dot product
-#         return (self.x * rhs.x + self.y * rhs.y)
-#     def __mul__(self, s): # 's' is a number, not a point
-#         return Point(s * self.x, s * self.y)
-#     def __rmul__(self, s): # 's' is a number, not a point
-#         return Point(s * self.x, s * self.y)
-
-#     def opposite(self):
-#         return Point(-self.x, -self.y)
-#     def rotateCCW(self):
-#         return Point(-self.y, self.x)
-#     def squaredLength(self):
-#         return self.x * self.x + self.y * self.y
-#     def length(self):
-#         return math.sqrt(self.squaredLength())
-
-#     def sheared(self, angleInDegree):
-#         r = math.tan(math.radians(angleInDegree))
-#         return Point(self.x - r*self.y, self.y)
-#     def absolute(self):
-#         return Point(abs(self.x), abs(self.y))
-#     def normalized(self):
-#         l = self.length()
-#         if l < 1e-6: return Point(0.0, 0.0)
-#         return Point(float(self.x)/l, float(self.y)/l)
-#     def swapAxes(self):
-#         return Point(self.y, self.x)
-#     def projectOnX(self):
-#         return Point(self.x, 0,0)
-#     def projectOnAxis(self,axis):
-#         if axis == 0:
-#             return Point(self.x, 0.0)
-#         else:
-#             return Point(0.0, self.y)
-#     def projectOnY(self):
-#         return Point(0.0, self.y)
-
 
 class RoboCJKController(object):
+
+
+
     def __init__(self):
         self.observers = False
         self.project = None
@@ -215,6 +151,7 @@ class RoboCJKController(object):
         self.projectEditorController = projectEditorController.ProjectEditorController(self)
         self.initialDesignController = initialDesignController.InitialDesignController(self)
         self.deepComponentEditionController = deepComponentEditionController.DeepComponentEditionController(self)
+        self.deepComponentInstantiationController = deepComponentInstantiationController.DeepComponentInstantiationController(self)
         self.keysAndExtremsEditionController = keysAndExtremsEditionController.KeysAndExtremsEditionController(self)
         self.deepComponentsController = deepComponentsController.DeepComponentsController(self)
         self.inspectorController = inspectorController.inspectorController(self)
@@ -229,6 +166,7 @@ class RoboCJKController(object):
             self.initialDesignController,
             self.deepComponentEditionController,
             self.keysAndExtremsEditionController,
+            self.deepComponentInstantiationController,
             ]
 
         installTool(self.shapeTool)
@@ -249,6 +187,13 @@ class RoboCJKController(object):
 
         self.textCenterInterface = None
 
+
+    def test(func):
+        def wrapper(*args, **kwargs):
+            func(*args, **kwargs)
+            print("testettetizekjhfjclskjd,fnq;lksdhfjolckd")
+        return wrapper
+
     def windowCloses(self):
         setMaxAmountOfVisibleTools(14)
         uninstallTool(self.shapeTool)
@@ -260,14 +205,8 @@ class RoboCJKController(object):
         if self.projectEditorController.interface:
             self.projectEditorController.interface.w.close()
 
-        if self.initialDesignController.interface:
-            self.initialDesignController.interface.w.close()
-
         if self.deepComponentsController.interface:
             self.deepComponentsController.interface.w.close()
-
-        if self.keysAndExtremsEditionController.interface:
-            self.keysAndExtremsEditionController.interface.w.close()
 
         if self.textCenterInterface:
             self.textCenterInterface.w.close()
@@ -278,8 +217,9 @@ class RoboCJKController(object):
         if self.textCenterController.interface:
             self.textCenterController.interface.w.close()
 
-        if self.deepComponentEditionController.interface:
-            self.deepComponentEditionController.interface.w.close()
+        for k in self.designControllers:
+            if k.interface:
+                k.interface.w.close()
 
     def closeDesignControllers(self):
         for designController in self.designControllers:
