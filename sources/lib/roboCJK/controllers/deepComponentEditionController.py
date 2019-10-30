@@ -215,6 +215,7 @@ class DeepComponentEditionController(object):
                             for i in range(len(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][masterDCFont])):
                                 gname = glyphName + "_%s"%str(i).zfill(2)
                                 masterDeepComponentsGlyphs.newGlyph(gname)
+                                masterDeepComponentsGlyphs[gname].lib["DeepComponents"]={"DC_00":{}}
                                 masterDeepComponentsGlyphs[gname].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
                 for glyph in masterDeepComponentsGlyphs:
                     for i in range(30):

@@ -26,10 +26,12 @@ from mojo.roboFont import *
 from mojo.UI import PostBannerNotification
 from resources import deepCompoMasters_AGB1_FULL
 from resources import deepCompo2Chars
+from resources import chars2deepCompo
 
 reload(deepComponentInstantiationView)
 reload(deepCompoMasters_AGB1_FULL)
 reload(deepCompo2Chars)
+reload(chars2deepCompo)
 
 class DeepComponentInstantiationController(object):
 
@@ -52,14 +54,14 @@ class DeepComponentInstantiationController(object):
         """
 
     def char2DC(self):
-        c2dc = {}
-        for dc, chars in deepCompo2Chars.DC2Chars[self.script].items():
-            for char in chars:
-                if char not in c2dc:
-                    c2dc[char] = []
-                if dc in c2dc[char]: continue
-                c2dc[char].append(dc)
-        self.RCJKI.char2DC = c2dc
+        # c2dc = {}
+        # for dc, chars in deepCompo2Chars.DC2Chars[self.script].items():
+        #     for char in chars:
+        #         if char not in c2dc:
+        #             c2dc[char] = []
+        #         # if dc in c2dc[char]: continue
+        #         c2dc[char].append(dc)
+        self.RCJKI.char2DC = chars2deepCompo.Chars2DC[self.script]
         # print(deepCompo2Chars.DC2Chars[self.script])
 
     def launchDeepComponentInstantiationInterface(self):
@@ -139,10 +141,43 @@ class DeepComponentInstantiationController(object):
     #     self.interface.w.mainCanvas.update()
 
 
-    # def saveSubsetFonts(self):
-    #     for f in self.RCJKI.fonts2DCFonts.values():
-    #         f.save()
-    #     PostBannerNotification("Fonts saved", "")
+    def saveSubsetFonts(self):
+        for f in self.RCJKI.fonts2DCFonts.values():
+            f.save()
+        PostBannerNotification("Fonts saved", "")
+
+    def pushDCMasters(self):
+        rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
+        gitEngine = git.GitEngine(rootfolder)
+        gitEngine.pull()
+
+        script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
+        DCMasterPaths = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'DeepComponents', script)
+
+        for DCMasterPath in os.listdir(DCMasterPaths):
+            if not DCMasterPath.endswith('.ufo'): continue
+
+            DCM = OpenFont(os.path.join(DCMasterPaths, DCMasterPath), showInterface = False)
+            for font in list(self.RCJKI.fonts2DCFonts.values()):
+                if font.path.split("/")[-1] == DCMasterPath:
+                    DCG = font
+
+            fontLayers = lambda font: [l.name for l in font.layers]
+
+            reservedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs["_deepComponentsInstantiation_glyphs"]
+            lockedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user)._allOtherLockedGlyphs["_deepComponentsInstantiation_glyphs"]
+
+            self.merge(reservedGlyphs, DCG, DCM, fontLayers(DCG))
+            self.merge(lockedGlyphs, DCM, DCG, fontLayers(DCM))
+
+            DCM.save()
+            DCM.close()
+            DCG.save()
+            
+        stamp = "Masters Fonts Saved"
+        gitEngine.commit(stamp)
+        gitEngine.push()
+        PostBannerNotification('Git Push', stamp)
 
     # def injectGlyphsBack(self, glyphs, user):
     #     self.RCJKI.injectGlyphsBack(glyphs, user)

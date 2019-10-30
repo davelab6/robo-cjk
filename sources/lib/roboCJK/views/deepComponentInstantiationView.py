@@ -30,9 +30,12 @@ from mojo.events import addObserver, removeObserver
 from lib.cells.colorCell import RFColorCell
 # from fontTools.pens import cocoaPen
 
+from defconAppKit.controls.glyphCollectionView import GlyphCollectionView
+
 import os
 import json
 # import Quartz
+import copy
 
 from utils import files
 
@@ -115,7 +118,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
                                 {"title": "Name", "width" : 150, 'editable':False},
                                 # {"title": "MarkColor", "width" : 30, 'editable':False}
                                 ],
-        #         selectionCallback = self.deepComponentsSetListSelectionCallback,
+                selectionCallback = self.keyVariantListSelectionCallback,
         #         doubleClickCallback = self.deepComponentsSetListDoubleClickCallback,
         #         # editCallback = self.glyphSetListEditCallback,
                 showColumnTitles = False,
@@ -124,9 +127,19 @@ class DeepComponentInstantiationWindow(BaseWindowController):
 
         segmentedItems = ["Frozen Deep Components", "New Deep Component"]
         self.w.dcSegmentedButton = SegmentedButton((200, -240, -0, 20),
-                [dict(title=e, width=600/len(segmentedItems)) for e in segmentedItems]
+                [dict(title=e, width=600/len(segmentedItems)) for e in segmentedItems],
+                callback = self.dcSegmentedButtonCallback
                 )
         self.w.dcSegmentedButton.set(0)
+
+        self.w.frozenDCGroup = Group((200, -220, -0, -0))
+        self.w.newDCGroup = Group((200, -220, -0, -0))
+        self.w.newDCGroup.show(0)
+        self.DCGroups = [
+                        self.w.frozenDCGroup,
+                        self.w.newDCGroup
+                        ]
+        self.w.frozenDCGroup.frozenDCList = GlyphCollectionView((0, -0, -0, -0))
 
         # self.w.deepComponentsSetList = List((0, 315, 200, 200),
         #         [],
@@ -145,12 +158,12 @@ class DeepComponentInstantiationWindow(BaseWindowController):
 
         self.w.saveLocalFontButton = Button((0,-60,200,20), 
             'Save', 
-            # callback=self.saveLocalFontButtonCallback
+            callback=self.saveLocalFontButtonCallback
             )
 
         self.w.pushBackButton = Button((0,-40,200,20), 
             'Push', 
-            # callback=self.pushBackButtonCallback
+            callback=self.pushBackButtonCallback
             )
 
         self.w.pullMasterGlyphsButton = Button((0,-20,200,20), 
@@ -195,28 +208,31 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         # self.w.dcOffsetYEditText.getNSTextField().setBordered_(False)
         # self.w.dcOffsetYEditText.getNSTextField().setDrawsBackground_(False)
 
-        # slider = SliderListCell(minValue = 0, maxValue = 1000)
-        # # checkbox = CheckBoxListCell()
-        # self.slidersValuesList = []
-        # self.w.slidersList = List((200, -240, -0, -20),
-        #     self.slidersValuesList,
-        #     columnDescriptions = [
-        #                             {"title": "Layer", "editable": False, "width": 0},
+        slider = SliderListCell(minValue = 0, maxValue = 1000)
+        # checkbox = CheckBoxListCell()
+        self.slidersValuesList = []
+        self.w.newDCGroup.slidersList = List((0, -00, -0, -20),
+            self.slidersValuesList,
+            columnDescriptions = [
+                                    {"title": "Layer", "editable": False, "width": 0},
                                     
-        #                             {"title": "Values", "cell": slider, "width": 410},
-        #                             {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
-        #                             {"title": "NLI", "cell": PopUpButtonListCell(["NLI", "Reset NLI", "Update NLI"]), "binding": "selectedValue", "width": 100}
-        #                             # {"title": "Lock", "cell": checkbox, "width": 20},
-        #                            # {"title": "YValue", "cell": slider, "width": 250},
+                                    {"title": "Values", "cell": slider},
+                                    {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
+                                    # {"title": "NLI", "cell": PopUpButtonListCell(["NLI", "Reset NLI", "Update NLI"]), "binding": "selectedValue", "width": 100}
+                                    # {"title": "Lock", "cell": checkbox, "width": 20},
+                                   # {"title": "YValue", "cell": slider, "width": 250},
                                     
-        #                             ],
-        #     editCallback = self.slidersListEditCallback,
-        #     doubleClickCallback = self.sliderListDoubleClickCallback,
-        #     drawFocusRing = False,
-        #     allowsMultipleSelection = False,
-        #     rowHeight = 50.0,
-        #     showColumnTitles = False
-        #     )
+                                    ],
+            editCallback = self.slidersListEditCallback,
+            # doubleClickCallback = self.sliderListDoubleClickCallback,
+            drawFocusRing = False,
+            allowsMultipleSelection = False,
+            rowHeight = 50.0,
+            showColumnTitles = False
+            )
+        self.w.newDCGroup.addDCInstance = Button((-150, -20, -0, -0),
+            "add",
+            callback = self.addDCInstanceCallback)
 
         # self.w.addNLIButton = Button((-300, -20, 100, 20),
         #     'NLI',
@@ -284,6 +300,107 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         # DCVariants = [dict(Char = v[0], Name = files.unicodeName(v[0])) for v in deepCompoMasters_AGB1_FULL.deepCompoMasters[script][selectedKey]]
         self.w.keyVariantList.set(DCVariants)
 
+    def keyVariantListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: 
+            self.w.frozenDCGroup.frozenDCList.set([])
+            self.w.newDCGroup.slidersList.set([])
+            return
+
+        selectedChar = sender.get()[sel[0]]['Name']
+        dcFont = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont]
+
+        self.selectedDeepComponentGlyph = dcFont[selectedChar]
+        self.getFrozenDC()
+        # tempFDC = NewFont(showUI = False)
+        # DCGlyphsList = []
+        # for FDC, layersInfos in self.selectedDeepComponentGlyph.lib["DeepComponents"].items():
+        #     tempFDC.newGlyph(FDC)
+        #     tempFDC[FDC].appendGlyph(interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos))
+        #     tempFDC[FDC].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
+        #     DCGlyphsList.append(tempFDC[FDC])
+
+        # self.w.frozenDCGroup.frozenDCList.set(DCGlyphsList)
+        self.setSliderList()
+
+    def getFrozenDC(self):
+        tempFDC = NewFont(showUI = False)
+        DCGlyphsList = []
+        for FDC, layersInfos in self.selectedDeepComponentGlyph.lib["DeepComponents"].items():
+            tempFDC.newGlyph(FDC)
+            tempFDC[FDC].appendGlyph(interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos))
+            tempFDC[FDC].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
+            DCGlyphsList.append(tempFDC[FDC])
+
+        self.w.frozenDCGroup.frozenDCList.set(DCGlyphsList)
+
+    def setSliderList(self):
+        self.RCJKI.layersInfos = {}
+        self.slidersValuesList = []
+        # if not hasattr(self, "selectedDeepComponentGlyph"): return
+        layers = [l.name for l in list(filter(lambda l: len(self.selectedDeepComponentGlyph.getLayer(l.name)), self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont].layers))]
+        for layerName in layers:
+            if layerName == "foreground": continue
+            g = self.selectedDeepComponentGlyph.getLayer(layerName)
+            emDimensions = self.RCJKI.project.settings['designFrame']['em_Dimension']
+            pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
+
+            d = {'Layer': layerName,
+                'Image': NSImage.alloc().initWithData_(pdfData),
+                'Values': 0,
+                # 'NLI': 'NLI'
+                }
+
+            self.slidersValuesList.append(d)
+            self.RCJKI.layersInfos[layerName] = 0
+        self.w.newDCGroup.slidersList.set(self.slidersValuesList)
+
+
+    @refreshMainCanvas
+    def saveLocalFontButtonCallback(self, sender):
+        self.RCJKI.deepComponentInstantiationController.saveSubsetFonts()
+
+    @refreshMainCanvas
+    def pushBackButtonCallback(self, sender):
+        self.controller.pushDCMasters()
+
+    @refreshMainCanvas
+    def slidersListEditCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        # if self.lock: return
+        # self.lock = True
+        layersInfo = sender.get()
+        layerInfo = layersInfo[sel[0]]
+
+        selectedLayerName = layerInfo["Layer"]
+        image = layerInfo["Image"]
+        value = layerInfo["Values"]
+
+        self.RCJKI.layersInfos[selectedLayerName] = value
+        self.slidersValuesList[sel[0]]["Values"] = value
+
+
+        # self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
+        # self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
+        # self.w.mainCanvas.update()
+        # self.lock = False
+    @refreshMainCanvas
+    def addDCInstanceCallback(self, sender):
+        # print(self.RCJKI.layersInfos)
+        # print(self.selectedDeepComponentGlyph.lib["DeepComponents"])
+
+        # name = "DC_"
+        i = 0
+        while True:
+            name = "DC_%s"%str(i).zfill(2)
+            if name not in self.selectedDeepComponentGlyph.lib["DeepComponents"].keys():
+                break
+            i+=1
+
+        self.selectedDeepComponentGlyph.lib["DeepComponents"][name] = copy.deepcopy(self.RCJKI.layersInfos)
+        self.selectedDeepComponentGlyph.update()
+        self.getFrozenDC()
 
 
     def fontsListSelectionCallback(self, sender):
@@ -298,6 +415,9 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         # print(self.RCJKI.currentFont)
         self.controller.updateGlyphSetList()
 
+    def dcSegmentedButtonCallback(self, sender):
+        for i, g in enumerate(self.DCGroups):
+            g.show(i==sender.get())
 
     def windowCloses(self, sender):
         # askYesNo('Do you want to save fonts?', "Without saving you'll loose unsaved modification", alertStyle = 2, parentWindow = None, resultCallback = self.yesnocallback)
