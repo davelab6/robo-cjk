@@ -144,40 +144,45 @@ class DeepComponentInstantiationController(object):
     def saveSubsetFonts(self):
         for f in self.RCJKI.fonts2DCFonts.values():
             f.save()
+        for font in self.RCJKI.allFonts:
+            for f in font.values():
+                f.save()
+            
         PostBannerNotification("Fonts saved", "")
 
     def pushDCMasters(self):
-        rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
-        gitEngine = git.GitEngine(rootfolder)
-        gitEngine.pull()
+        return
+        # rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
+        # gitEngine = git.GitEngine(rootfolder)
+        # gitEngine.pull()
 
-        script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
-        DCMasterPaths = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'DeepComponents', script)
+        # script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
+        # DCMasterPaths = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'DeepComponents', script)
 
-        for DCMasterPath in os.listdir(DCMasterPaths):
-            if not DCMasterPath.endswith('.ufo'): continue
+        # for DCMasterPath in os.listdir(DCMasterPaths):
+        #     if not DCMasterPath.endswith('.ufo'): continue
 
-            DCM = OpenFont(os.path.join(DCMasterPaths, DCMasterPath), showInterface = False)
-            for font in list(self.RCJKI.fonts2DCFonts.values()):
-                if font.path.split("/")[-1] == DCMasterPath:
-                    DCG = font
+        #     DCM = OpenFont(os.path.join(DCMasterPaths, DCMasterPath), showInterface = False)
+        #     for font in list(self.RCJKI.fonts2DCFonts.values()):
+        #         if font.path.split("/")[-1] == DCMasterPath:
+        #             DCG = font
 
-            fontLayers = lambda font: [l.name for l in font.layers]
+        #     fontLayers = lambda font: [l.name for l in font.layers]
 
-            reservedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs["_deepComponentsInstantiation_glyphs"]
-            lockedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user)._allOtherLockedGlyphs["_deepComponentsInstantiation_glyphs"]
+        #     reservedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs["_deepComponentsInstantiation_glyphs"]
+        #     lockedGlyphs = self.RCJKI.collab._userLocker(self.RCJKI.user)._allOtherLockedGlyphs["_deepComponentsInstantiation_glyphs"]
 
-            self.merge(reservedGlyphs, DCG, DCM, fontLayers(DCG))
-            self.merge(lockedGlyphs, DCM, DCG, fontLayers(DCM))
+        #     self.merge(reservedGlyphs, DCG, DCM, fontLayers(DCG))
+        #     self.merge(lockedGlyphs, DCM, DCG, fontLayers(DCM))
 
-            DCM.save()
-            DCM.close()
-            DCG.save()
+        #     DCM.save()
+        #     DCM.close()
+        #     DCG.save()
             
-        stamp = "Masters Fonts Saved"
-        gitEngine.commit(stamp)
-        gitEngine.push()
-        PostBannerNotification('Git Push', stamp)
+        # stamp = "Masters Fonts Saved"
+        # gitEngine.commit(stamp)
+        # gitEngine.push()
+        # PostBannerNotification('Git Push', stamp)
 
     # def injectGlyphsBack(self, glyphs, user):
     #     self.RCJKI.injectGlyphsBack(glyphs, user)
