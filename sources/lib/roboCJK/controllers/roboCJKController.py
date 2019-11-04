@@ -97,6 +97,8 @@ class RoboCJKController(object):
         self.currentFont = None
         self.currentGlyph = None
 
+        self.DeepComponentsInstances = []
+
         self.pathsGlyphs = {}
         self.ploc = None
         self.activeNLI = False
@@ -187,12 +189,6 @@ class RoboCJKController(object):
 
         self.textCenterInterface = None
 
-
-    def test(func):
-        def wrapper(*args, **kwargs):
-            func(*args, **kwargs)
-            print("testettetizekjhfjclskjd,fnq;lksdhfjolckd")
-        return wrapper
 
     def windowCloses(self):
         setMaxAmountOfVisibleTools(14)
@@ -505,6 +501,16 @@ class RoboCJKController(object):
             self.currentGlyph.getLayer("foreground"), 
             # self.pathsGlyphs, 
             self.layersInfos)
+
+    # @property
+    # def DeepComponentsInstances(self):
+    #     if self.designStep != '_deepComponentsInstantiation_glyphs': 
+    #         return []
+    #     instances = self.deepComponentInstantiationController.getDeepComponentsInstances()
+    #     if not instances:
+    #         return []
+    #     return instances
+
 
     def glyphWindowBecameMain(self, sender):
         self.getCurrentGlyph()

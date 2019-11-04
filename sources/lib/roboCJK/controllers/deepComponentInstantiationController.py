@@ -27,11 +27,13 @@ from mojo.UI import PostBannerNotification
 from resources import deepCompoMasters_AGB1_FULL
 from resources import deepCompo2Chars
 from resources import chars2deepCompo
+from utils import interpolations
 
 reload(deepComponentInstantiationView)
 reload(deepCompoMasters_AGB1_FULL)
 reload(deepCompo2Chars)
 reload(chars2deepCompo)
+reload(interpolations)
 
 class DeepComponentInstantiationController(object):
 
@@ -108,6 +110,39 @@ class DeepComponentInstantiationController(object):
             l += later
         self.interface.w.glyphSetList.set(l)
 
+
+    def getDeepComponentsInstances(self):
+        instances = []
+
+
+        """
+        [{'DeepComponentName': 'DC_8279_00', 'DeepComponentInstance': {'Name': 'DC_05', 'offset': (0, 0)}}, {'DeepComponentName': 'DC_79BE_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_722B_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_5189_00', 'DeepComponentInstance': {}}]
+        """
+        # print(self.RCJKI.currentGlyph.lib['DeepComponentsInfos'])
+        for dc in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
+            dci = dc["DeepComponentInstance"]
+            name = dc["DeepComponentName"]
+            # print("--------------")
+            if not "Name" in dci: continue
+            dcGlyph = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name]
+            layersInfos = dcGlyph.lib["DeepComponents"][dci["Name"]]
+            # print(dcGlyph.lib["DeepComponents"][dci["Name"]])
+            # print("--------------\n")
+            DCG = interpolations.deepolation(RGlyph(), 
+                    dcGlyph.getLayer("foreground"), 
+                    # self.pathsGlyphs, 
+                    layersInfos)
+            x, y = dci["offset"]
+            DCG.moveBy((x, y))
+            instances.append(DCG)
+        # for DC in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
+        #     # name = "uni"
+        #     name = DC["DeepComponentName"]
+        #     print(self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name].lib["DeepComponents"])
+        # print(instances)
+        self.RCJKI.DeepComponentsInstances = instances
+
+        # return instances
 
     # def updateDeepComponentsSetList(self, glyphName):
     #     l = []

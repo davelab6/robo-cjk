@@ -29,6 +29,7 @@ from utils import robocjk
 from mojo.UI import OpenGlyphWindow
 from mojo.events import extractNSEvent
 from fontTools.ufoLib.glifLib import readGlyphFromString
+from utils import interpolations
 
 import os
 
@@ -37,6 +38,7 @@ reload(referenceViewDrawer)
 reload(interpolaviourDrawer)
 reload(displayOptionsDrawer)
 reload(robocjk)
+reload(interpolations)
 
 cwd = os.getcwd()
 rdir = os.path.abspath(os.path.join(cwd, os.pardir))
@@ -47,9 +49,7 @@ eps = 1e-10
 
 class MainCanvas():
 
-    scale = .32
-    translateX = 300
-    translateY = 280
+    
 
     def __init__(self, RCJKI, controller):
         self.RCJKI = RCJKI
@@ -66,7 +66,38 @@ class MainCanvas():
         self.controller.deepComponentTranslateX = 0
         self.controller.deepComponentTranslateY = 0
 
+        self.DCIGlyph = None
+        self.TempDCIGlyph = None
+
+        self.scale = .32
+        self.translateX = 300
+        self.translateY = 280
+
+
+        self.pointsTest = []
+
     def mouseDown(self, info):
+        # translate(((self.canvasWidth/self.scale)-1000)*.5, 250)
+        x, y = info.locationInWindow()
+
+        command = extractNSEvent(info)['commandDown']
+        px, py = ((x-self.translateX)/self.scale)-((self.canvasWidth/self.scale)-1000)*.5, ((y-self.translateY)/self.scale)-130/self.scale
+        self.pointsTest = px, py
+        if command:
+            DeepComponentsInstances = self.RCJKI.DeepComponentsInstances
+            for i, dci in enumerate(DeepComponentsInstances):
+                if dci.pointInside((px, py)):
+                    # print(i, self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i])
+                    self.DCIGlyph = [self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i], i]
+                    return
+            if self.controller.tempDeepComponent is not None:
+                selectedDeepComponentGlyph, layersInfos, offset = self.controller.tempDeepComponent
+                gi = interpolations.deepolation(RGlyph(), selectedDeepComponentGlyph, layersInfos)
+                gi.moveBy((offset[0], offset[1]))
+                if gi.pointInside((px, py)):
+                    self.TempDCIGlyph = gi
+                    return
+
         if info.clickCount() == 2 and self.RCJKI.currentGlyph is not None:
             self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
             # Helpers.setDarkMode(self.ui.window, self.ui.darkMode)
@@ -75,17 +106,38 @@ class MainCanvas():
         self.controller.w.mainCanvas.update()
 
     def mouseDragged(self, info):
+        # print(info)
         command = extractNSEvent(info)['commandDown']
         deltaX = info.deltaX()/(self.scale+eps)
         deltaY = info.deltaY()/(self.scale+eps)
         if command:
             # pass
-            self.controller.deepComponentTranslateX += int(deltaX)
-            self.controller.deepComponentTranslateY -= int(deltaY)
+            
+            if self.RCJKI.designStep == '_deepComponentsEdition_glyphs':
+                self.controller.deepComponentTranslateX += int(deltaX)
+                self.controller.deepComponentTranslateY -= int(deltaY)
 
-            self.controller.UpdateDCOffset()
+                self.controller.UpdateDCOffset()
 
-        else:
+            elif self.RCJKI.designStep == '_deepComponentsInstantiation_glyphs':
+                if self.DCIGlyph is not None:
+                # print(self.DCIGlyph[0])
+                    x, y = self.DCIGlyph[0]['DeepComponentInstance']["offset"]
+                    x += deltaX
+                    y -= deltaY
+                    self.DCIGlyph[0]['DeepComponentInstance']["offset"] = [x, y]
+                    self.RCJKI.DeepComponentsInstances[self.DCIGlyph[1]].moveBy((deltaX, -deltaY))
+
+                if self.TempDCIGlyph is not None:
+                    x, y = self.controller.tempDeepComponent[2]
+                    x += deltaX
+                    y -= deltaY
+                    self.controller.tempDeepComponent[2] = [x, y]
+                    self.TempDCIGlyph.moveBy((deltaX, -deltaY))
+
+                # self.RCJKI..getDeepComponentsInstances()
+
+        elif not command:
             self.translateX += deltaX
             self.translateY -= deltaY
         self.update()
@@ -120,6 +172,12 @@ class MainCanvas():
             minScale = .005
             if scale > minScale:
                 self.scale = scale
+        self.update()
+
+    def mouseUp(self, info):
+        self.DCIGlyph = None
+        # self.TempDCIGlyph = None
+        self.RCJKI.deepComponentInstantiationController.getDeepComponentsInstances()
         self.update()
 
     def keyDown(self, info):
@@ -164,7 +222,8 @@ class MainCanvas():
                 drawGlyph(icon)
                 restore()
             else:
-                if not len(g) and not "deepComponentsGlyph" in g.lib and g.unicode and not self.preview:
+                # if not len(g) and not "deepComponentsGlyph" in g.lib and g.unicode and not self.preview:
+                if not len(g) and not "DeepComponentsInfos" in g.lib and g.unicode and not self.preview:
                     fill(0, 0, 0, .1)
                     rect(-10000, -10000, 20000, 20000)
                     fill(0, 0, .8, .2)
@@ -210,6 +269,18 @@ class MainCanvas():
                     else:
                         drawGlyph(g)
                     
+                    save()
+                    fill(0, 0, 0, .5)
+                    if self.preview: 
+                        fill(0, 0, 0, 1)
+                    for dci in self.RCJKI.DeepComponentsInstances:
+                        drawGlyph(dci)
+                    fill(0, 0, .8, .6)
+                    # if self.preview: 
+                    #     fill(0, 0, 0, 1)
+                    if self.TempDCIGlyph is not None:
+                        drawGlyph(self.TempDCIGlyph)
+                    restore()
 
                     if self.RCJKI.settings["showDesignFrame"]:
                         if not self.preview or self.preview == self.RCJKI.settings["designFrame"]["drawPreview"]:
@@ -259,6 +330,13 @@ class MainCanvas():
                     # if self.ui.interpolaviourOnOff:
                     #     InterpolaviourDrawer(self.ui).draw(g, self.scale, self.preview)
                     # TesterDeepComponent(self.ui, self.ui.w.deepComponentGroup.creator.storageFont_Glyphset)
+
+                    save()
+                    fill(1, 0, 0, 1)
+                    if self.pointsTest:
+                        x, y = self.pointsTest
+                        oval(x-10, y-10, 20, 20)
+                    restore()
             restore()
         except Exception as e:
             raise e

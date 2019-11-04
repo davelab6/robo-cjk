@@ -64,6 +64,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.RCJKI.allFonts = []
         self.selectedGlyph = None
         self.RCJKI.layersInfos = {}
+        self.tempDeepComponent = None
 
         self.lock = False
 
@@ -86,7 +87,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
                                 {"title": "MarkColor", "width" : 30, 'editable':False}
                                 ],
                 selectionCallback = self.glyphSetListSelectionCallback,
-                # doubleClickCallback = self.glyphSetListdoubleClickCallback,
+                doubleClickCallback = self.glyphSetListdoubleClickCallback,
                 # editCallback = self.glyphSetListEditCallback,
                 showColumnTitles = False,
                 drawFocusRing = False)
@@ -104,7 +105,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
                                 # {"title": "MarkColor", "width" : 30, 'editable':False}
                                 ],
                 selectionCallback = self.glyphCompositionListSelectionCallback,
-        #         doubleClickCallback = self.deepComponentsSetListDoubleClickCallback,
+                # doubleClickCallback = self.glyphSetListdoubleClickCallback,
         #         # editCallback = self.glyphSetListEditCallback,
                 showColumnTitles = False,
                 drawFocusRing = False
@@ -256,6 +257,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
 
         # self.observer()
 
+
         self.w.bind('close', self.windowCloses)
         # self.w.bind('became main', self.windowBecameMain)
         self.w.open()
@@ -271,6 +273,7 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.selectedGlyphName = sender.get()[sel[0]]['Name']    
         self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedGlyphName]
 
+
         if self.selectedGlyphName in self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs['_deepComponentsInstantiation_glyphs']:
             self.currentGlyphComposition = None
             if self.selectedChar:
@@ -279,20 +282,43 @@ class DeepComponentInstantiationWindow(BaseWindowController):
 
 
                 # ----- ADD DCINFOS IN CURRENTGLYPH LIB
-                if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
-                    self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
-                    for e in self.currentGlyphComposition:
-                        self.RCJKI.currentGlyph.lib["DeepComponentsInfos"].append({e["Name"]:{}})
+                
+                self.setCurrentGlyphLib()
+                self.controller.getDeepComponentsInstances()
+                # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"])
 
         else:
             self.w.glyphCompositionList.set([])
             self.w.glyphCompositionList.setSelection([])
+
+        # self.controller.getDeepComponentsInstances()
         # self.controller.updateDeepComponentsSetList(self.selectedGlyphName)
 
         # self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
         # self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
         # self.w.dcOffsetYEditText.set(self.deepComponentTranslateY)
         # self.w.mainCanvas.update()
+
+    def setCurrentGlyphLib(self):
+        if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
+            self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
+            for e in self.currentGlyphComposition:
+                name = e["Name"]
+                char = e["Char"]
+                dcFont = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont]
+                # print(self.getDCVariant(char, dcFont))
+                self.RCJKI.currentGlyph.lib["DeepComponentsInfos"].append(
+                    dict(
+                        DeepComponentName = self.getDCVariant(char, dcFont)[0]["Name"],
+                        DeepComponentInstance = {}
+                        )
+                    # {self.getDCVariant(char, dcFont)[0]["Name"]:{}}
+                    )
+
+    def getDCVariant(self, selectedKey, dcFont):
+        selectedKeyCode = files.normalizeUnicode(hex(ord(selectedKey))[2:].upper())
+        DCV = list(filter(lambda n: selectedKeyCode in n.split('_'), dcFont.keys()))
+        return [dict(Char = chr(int(n.split("_")[1],16)), Name = n) for n in sorted(DCV)]
 
     @refreshMainCanvas
     def glyphCompositionListSelectionCallback(self, sender):
@@ -301,20 +327,38 @@ class DeepComponentInstantiationWindow(BaseWindowController):
             self.w.keyVariantList.set([])
             return
 
+        
+
         selectedKey = sender.get()[sel[0]]['Char']
         self.selectedKeyName = sender.get()[sel[0]]['Name']
         script = self.controller.script
         dcFont = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont]
 
-        selectedKeyCode = files.normalizeUnicode(hex(ord(selectedKey))[2:].upper())
-        DCV = list(filter(lambda n: selectedKeyCode in n.split('_'), dcFont.keys()))
-        DCVariants = [dict(Char = chr(int(n.split("_")[1],16)), Name = n) for n in sorted(DCV)]
+        DCVariants = self.getDCVariant(selectedKey, dcFont)
+
+
+
+        # if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
+        #     self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
+        # lib = self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]
+
+        # defaultDC = [getDCVariant(e["Char"])[0]["Name"] for e in sender.get()]
+        
+        # for i, name in enumerate(defaultDC):
+        #     print([list(e.keys())[0][:-3] for e in lib])
+        #     if name[:-3] not in [list(e.keys())[0][:-3] for e in lib]:
+        #         print(name[:-3])
+        #         lib.insert(i, {name:{}})
+        # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"])
+
 
         # DCVariants = [dict(Char = v[0], Name = files.unicodeName(v[0])) for v in deepCompoMasters_AGB1_FULL.deepCompoMasters[script][selectedKey]]
         # DCVariants = [dict(Char = v[0], Name = files.unicodeName(v[0])) for v in deepCompoMasters_AGB1_FULL.deepCompoMasters[script][selectedKey]]
         self.w.keyVariantList.set(DCVariants)
-        if DCVariants:
-            self.w.keyVariantList.setSelection([0])
+        for i, e in enumerate(DCVariants):
+            if not "DeepComponentsInfos" in self.RCJKI.currentGlyph.lib: continue
+            if e["Name"] == self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][sel[0]]["DeepComponentName"]:
+                self.w.keyVariantList.setSelection([i])
 
     def keyVariantListSelectionCallback(self, sender):
         sel = sender.getSelection()
@@ -323,12 +367,46 @@ class DeepComponentInstantiationWindow(BaseWindowController):
             self.w.newDCGroup.slidersList.set([])
             return
 
-        selectedChar = sender.get()[sel[0]]['Name']
+        selectedName = sender.get()[sel[0]]['Name']
         dcFont = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont]
 
-        self.selectedDeepComponentGlyph = dcFont[selectedChar]
+        # lib = self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]
+        glyphCompositionSel = self.w.glyphCompositionList.getSelection()[0]
+
+        # print(lib[glyphCompositionSel]["DeepComponentName"])
+        if 'DeepComponentsInfos' in self.RCJKI.currentGlyph.lib:
+            self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentName"] = selectedName
+            # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"])
+
+        # if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
+        #     self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
+        # lib = self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]
+
+        # print(selectedName)
+        # item = {selectedName:{}}
+        # print("------LIB------")
+        # print(lib[sel[0]])
+        # print("------LIB------")
+        # lib[sel[0]] = item
+
+        # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"] = lib
+        # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"])
+        # # if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
+        #     # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
+        # print(sender.get())
+        # for i, e in enumerate(sender.get()):
+        #     print([list(e.keys())[0] for e in lib])
+        #     if e["Name"] not in [list(e.keys())[0] for e in lib]:
+        #         lib.insert(i, {e["Name"]:{}})
+        #     # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"].append({e["Name"]:{}})
+        # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"] = lib
+        # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"])
+
+        self.selectedDeepComponentGlyph = dcFont[selectedName]
         self.getFrozenDC()
         self.setSliderList()
+
+        self.controller.getDeepComponentsInstances()
 
     def getFrozenDC(self):
         tempFDC = NewFont(showUI = False)
@@ -393,6 +471,14 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.RCJKI.layersInfos[selectedLayerName] = value
         self.slidersValuesList[sel[0]]["Values"] = value
 
+        offset = [0, 0]
+        if self.tempDeepComponent:
+            offset =  self.tempDeepComponent[2]
+        layersInfos = {layerInfo["Layer"]:layerInfo["Values"] for layerInfo in layersInfo}
+        # self.tempDeepComponent = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos)
+        self.tempDeepComponent = [self.selectedDeepComponentGlyph, layersInfos, offset]
+        self.canvasDrawer.TempDCIGlyph = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos)
+        self.canvasDrawer.TempDCIGlyph.moveBy((offset[0], offset[1]))
 
         # self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
         # self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
@@ -415,6 +501,10 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.selectedDeepComponentGlyph.update()
         self.getFrozenDC()
 
+        self.w.frozenDCGroup.frozenDCList.setSelection([-1])
+        self.controller.getDeepComponentsInstances()
+
+    @refreshMainCanvas
     def frozenDCListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel:
@@ -422,9 +512,11 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         glyph = sender.get()[sel[0]]
         name = glyph.name
 
-        instance = {name:(0, 0)}
+        # instance = {name:(0, 0)}
+        instance = dict(Name = name, offset = (0, 0))
         glyphCompositionSel = self.w.glyphCompositionList.getSelection()[0]
-        self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel][self.selectedKeyName] = instance
+        self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"] = instance
+        # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel][self.selectedKeyName] = instance
         self.RCJKI.currentGlyph.update()
 
         self.RCJKI.layersInfos = {}
@@ -433,6 +525,18 @@ class DeepComponentInstantiationWindow(BaseWindowController):
             self.slidersValuesList.append(self.getSlidersInfos(layerName, value))
             self.RCJKI.layersInfos[layerName] = value
         self.w.newDCGroup.slidersList.set(self.slidersValuesList)
+
+        self.controller.getDeepComponentsInstances()
+
+    @refreshMainCanvas
+    def glyphSetListdoubleClickCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel:
+            return
+        if not self.RCJKI.currentGlyph.width:
+            self.RCJKI.currentGlyph.width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
+            self.RCJKI.currentGlyph.update()
+        # print(self.RCJKI.currentGlyph.width)
         
 
     def fontsListSelectionCallback(self, sender):
@@ -446,10 +550,14 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.RCJKI.currentFont = self.RCJKI.allFonts[sel[0]][self.controller.fontsList[sel[0]]]
         # print(self.RCJKI.currentFont)
         self.controller.updateGlyphSetList()
+        self.controller.getDeepComponentsInstances()
 
+    @refreshMainCanvas
     def dcSegmentedButtonCallback(self, sender):
         for i, g in enumerate(self.DCGroups):
             g.show(i==sender.get())
+        self.tempDeepComponent = None
+        self.canvasDrawer.TempDCIGlyph = None
 
     def windowCloses(self, sender):
         # askYesNo('Do you want to save fonts?', "Without saving you'll loose unsaved modification", alertStyle = 2, parentWindow = None, resultCallback = self.yesnocallback)
