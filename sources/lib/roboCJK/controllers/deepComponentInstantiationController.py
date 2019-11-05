@@ -119,22 +119,23 @@ class DeepComponentInstantiationController(object):
         [{'DeepComponentName': 'DC_8279_00', 'DeepComponentInstance': {'Name': 'DC_05', 'offset': (0, 0)}}, {'DeepComponentName': 'DC_79BE_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_722B_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_5189_00', 'DeepComponentInstance': {}}]
         """
         # print(self.RCJKI.currentGlyph.lib['DeepComponentsInfos'])
-        for dc in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
-            dci = dc["DeepComponentInstance"]
-            name = dc["DeepComponentName"]
-            # print("--------------")
-            if not "Name" in dci: continue
-            dcGlyph = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name]
-            layersInfos = dcGlyph.lib["DeepComponents"][dci["Name"]]
-            # print(dcGlyph.lib["DeepComponents"][dci["Name"]])
-            # print("--------------\n")
-            DCG = interpolations.deepolation(RGlyph(), 
-                    dcGlyph.getLayer("foreground"), 
-                    # self.pathsGlyphs, 
-                    layersInfos)
-            x, y = dci["offset"]
-            DCG.moveBy((x, y))
-            instances.append(DCG)
+        if self.RCJKI.currentGlyph is not None:
+            for dc in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
+                dci = dc["DeepComponentInstance"]
+                name = dc["DeepComponentName"]
+                # print("--------------")
+                if not "Name" in dci: continue
+                dcGlyph = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name]
+                layersInfos = dcGlyph.lib["DeepComponents"][dci["Name"]]
+                # print(dcGlyph.lib["DeepComponents"][dci["Name"]])
+                # print("--------------\n")
+                DCG = interpolations.deepolation(RGlyph(), 
+                        dcGlyph.getLayer("foreground"), 
+                        # self.pathsGlyphs, 
+                        layersInfos)
+                x, y = dci["offset"]
+                DCG.moveBy((x, y))
+                instances.append(DCG)
         # for DC in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
         #     # name = "uni"
         #     name = DC["DeepComponentName"]

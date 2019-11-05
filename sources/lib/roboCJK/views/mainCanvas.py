@@ -81,15 +81,12 @@ class MainCanvas():
         x, y = info.locationInWindow()
 
         command = extractNSEvent(info)['commandDown']
-        px, py = ((x-self.translateX)/self.scale)-((self.canvasWidth/self.scale)-1000)*.5, ((y-self.translateY)/self.scale)-130/self.scale
-        self.pointsTest = px, py
+    
+        px = (x/self.scale - 200/self.scale - self.translateX - (((self.canvasWidth/self.scale)-1000)*.5))
+        py = (y/self.scale - 240/self.scale - self.translateY - 250)
+        # self.pointsTest = px, py
         if command:
             DeepComponentsInstances = self.RCJKI.DeepComponentsInstances
-            for i, dci in enumerate(DeepComponentsInstances):
-                if dci.pointInside((px, py)):
-                    # print(i, self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i])
-                    self.DCIGlyph = [self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i], i]
-                    return
             if self.controller.tempDeepComponent is not None:
                 selectedDeepComponentGlyph, layersInfos, offset = self.controller.tempDeepComponent
                 gi = interpolations.deepolation(RGlyph(), selectedDeepComponentGlyph, layersInfos)
@@ -97,6 +94,13 @@ class MainCanvas():
                 if gi.pointInside((px, py)):
                     self.TempDCIGlyph = gi
                     return
+                    
+            for i, dci in enumerate(DeepComponentsInstances):
+                if dci.pointInside((px, py)):
+                    # print(i, self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i])
+                    self.DCIGlyph = [self.RCJKI.currentGlyph.lib['DeepComponentsInfos'][i], i]
+                    return
+            
 
         if info.clickCount() == 2 and self.RCJKI.currentGlyph is not None:
             self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
@@ -331,12 +335,12 @@ class MainCanvas():
                     #     InterpolaviourDrawer(self.ui).draw(g, self.scale, self.preview)
                     # TesterDeepComponent(self.ui, self.ui.w.deepComponentGroup.creator.storageFont_Glyphset)
 
-                    save()
-                    fill(1, 0, 0, 1)
-                    if self.pointsTest:
-                        x, y = self.pointsTest
-                        oval(x-10, y-10, 20, 20)
-                    restore()
+                    # save()
+                    # fill(1, 0, 0, 1)
+                    # if self.pointsTest:
+                    #     x, y = self.pointsTest
+                    #     oval(x-10, y-10, 20, 20)
+                    # restore()
             restore()
         except Exception as e:
             raise e

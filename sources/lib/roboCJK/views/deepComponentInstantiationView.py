@@ -471,13 +471,21 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         self.RCJKI.layersInfos[selectedLayerName] = value
         self.slidersValuesList[sel[0]]["Values"] = value
 
+
+        glyphCompositionSel = self.w.glyphCompositionList.getSelection()[0]
         offset = [0, 0]
         if self.tempDeepComponent:
             offset =  self.tempDeepComponent[2]
-        layersInfos = {layerInfo["Layer"]:layerInfo["Values"] for layerInfo in layersInfo}
-        # self.tempDeepComponent = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos)
-        self.tempDeepComponent = [self.selectedDeepComponentGlyph, layersInfos, offset]
-        self.canvasDrawer.TempDCIGlyph = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, layersInfos)
+        elif 'DeepComponentInstance' in self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]:
+            # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"])
+            if "offset" in self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"]:
+                offset = self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"]["offset"]
+
+        # layersInfos = {layerInfo["Layer"]:layerInfo["Values"] for layerInfo in layersInfo}
+
+        # self.tempDeepComponent = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, self.RCJKI.layersInfos)
+        self.tempDeepComponent = [self.selectedDeepComponentGlyph, self.RCJKI.layersInfos, offset]
+        self.canvasDrawer.TempDCIGlyph = interpolations.deepolation(RGlyph(), self.selectedDeepComponentGlyph, self.RCJKI.layersInfos)
         self.canvasDrawer.TempDCIGlyph.moveBy((offset[0], offset[1]))
 
         # self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
@@ -497,12 +505,21 @@ class DeepComponentInstantiationWindow(BaseWindowController):
                 break
             i+=1
 
+        offset = self.tempDeepComponent[-1]
+        instance = dict(Name = name, offset = offset)
+        glyphCompositionSel = self.w.glyphCompositionList.getSelection()[0]
+        self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"] = instance
+        self.RCJKI.currentGlyph.update()
+
         self.selectedDeepComponentGlyph.lib["DeepComponents"][name] = copy.deepcopy(self.RCJKI.layersInfos)
         self.selectedDeepComponentGlyph.update()
         self.getFrozenDC()
 
         self.w.frozenDCGroup.frozenDCList.setSelection([-1])
         self.controller.getDeepComponentsInstances()
+
+        self.tempDeepComponent = None
+        self.canvasDrawer.TempDCIGlyph = None
 
     @refreshMainCanvas
     def frozenDCListSelectionCallback(self, sender):
@@ -512,9 +529,16 @@ class DeepComponentInstantiationWindow(BaseWindowController):
         glyph = sender.get()[sel[0]]
         name = glyph.name
 
-        # instance = {name:(0, 0)}
-        instance = dict(Name = name, offset = (0, 0))
         glyphCompositionSel = self.w.glyphCompositionList.getSelection()[0]
+
+        # instance = {name:(0, 0)}
+        offset = (0, 0)
+        if 'DeepComponentInstance' in self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]:
+            # print(self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"])
+            if "offset" in self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"]:
+                offset = self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"]["offset"]
+        instance = dict(Name = name, offset = offset)
+        
         self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel]["DeepComponentInstance"] = instance
         # self.RCJKI.currentGlyph.lib["DeepComponentsInfos"][glyphCompositionSel][self.selectedKeyName] = instance
         self.RCJKI.currentGlyph.update()
