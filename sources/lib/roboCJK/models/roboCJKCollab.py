@@ -43,11 +43,11 @@ class RoboCJKCollab(object):
         if not l: return False
         return l[0]
 
-    def _addLocker(self, user, glyphs=[], step=list(steps.keys())[0]):
+    def _addLocker(self, user, glyphs={}, step=list(steps.keys())[0]):
         if user not in [locker.user for locker in self._lockers]:
             locker = Locker(self, user)
             l = Locker(self, user)
-            l._setAttr(step)
+            l._setStep(step)
             l._addGlyphs(glyphs)
             self._lockers.append(l)
         else:
@@ -66,7 +66,7 @@ class RoboCJKCollab(object):
                     glyphs = locker['glyphs'][step], 
                     step = step
                     )
-                userLocker._setAttr(step)
+                userLocker._setStep(step)
                 userLocker._clearGlyphs()
                 userLocker._addGlyphs(locker['glyphs'][step])
 
@@ -75,6 +75,7 @@ class Locker(object):
         self._controller = controller
         self.user = user
         self.script = scriptFallback
+
         for step, obj in steps.items():
             if obj == "set": setattr(self, step, set())
             elif obj == "dict": setattr(self, step, dict())
@@ -135,8 +136,8 @@ class Locker(object):
                 elif steps[self._step] == "dict":
                     del getattr(self, self._step)[glyph]
 
-    def _setAttr(self, attr):
-        self._step = attr
+    def _setStep(self, step):
+        self._step = step
 
     def _setScript(self, script):
         self.script = script

@@ -208,7 +208,7 @@ class LockerDCEGroup(Group):
 
         userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         
-        userLocker._setAttr(self.step)
+        userLocker._setStep(self.step)
         userLocker._clearGlyphs()
         userLocker._addGlyphs(glyphs)
         userLocker._setScript(self.script)
@@ -313,7 +313,7 @@ class LockerIDGroup(Group):
 
         userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         
-        userLocker._setAttr(self.step)
+        userLocker._setStep(self.step)
         userLocker._clearGlyphs()
         userLocker._addGlyphs(glyphs)
         userLocker._setScript(self.script)
@@ -376,7 +376,7 @@ class LockerIDGroup(Group):
 
     #     userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         
-    #     userLocker._setAttr(self.step)
+    #     userLocker._setStep(self.step)
     #     userLocker._clearGlyphs()
     #     userLocker._addGlyphs(glyphs)
     #     userLocker._setScript(self.script)
@@ -464,7 +464,7 @@ class LockerGroup(Group):
         if not sel: return
         userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         glyphs = [files.unicodeName(char) for char in chars]
-        userLocker._setAttr(self.step)
+        userLocker._setStep(self.step)
         userLocker._clearGlyphs()
         userLocker._addGlyphs(glyphs)
         userLocker._setScript(self.script)
@@ -788,7 +788,7 @@ class EditProjectSheet():
     #     user = self.parent.sheet.lockerGroup.usersList.get()[sel[0]]
     #     userLocker = self.parent.RCJKI.collab._addLocker(user)
     #     glyphs = ['uni'+files.normalizeUnicode(hex(ord(char))[2:].upper()) for char in chars]
-    #     userLocker._setAttr("_DCE_glyphs")
+    #     userLocker._setStep("_DCE_glyphs")
     #     userLocker._clearGlyphs()
     #     userLocker._addGlyphs(glyphs)
     #     self.parent.RCJKI.project.usersLockers = self.parent.RCJKI.collab._toDict
