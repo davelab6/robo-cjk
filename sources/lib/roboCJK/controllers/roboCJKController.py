@@ -541,7 +541,8 @@ class RoboCJKController(object):
                 markColor = font[uiGlyphName].markColor
                 if len(font[uiGlyphName]) == 0 and not font[uiGlyphName].components:
                     state = 'empty'
-        if uiGlyphName in self.lockedGlyphs:
+        
+        if uiGlyphName in self.lockedGlyphs[step]:
             locked = True
 
         colID = tableColumn.identifier()
