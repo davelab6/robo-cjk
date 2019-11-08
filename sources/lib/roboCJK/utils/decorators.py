@@ -26,3 +26,23 @@ def refreshMainCanvas(func):
         except Exception as e:
             raise e
     return wrapper
+
+
+def antiRecursive(an = 0, defret = None, initial = []):
+    class decorate:
+        def __init__(self):
+            self.cs=initial
+            
+        def __call__(self, func):
+            def wrapper(*args, **kwargs):
+                id = args[an]
+                if id in self.cs:
+                    return defret
+                else:
+                    self.cs.append(id)
+                    x = func(*args, **kwargs)
+                    self.cs.remove(id)
+                    return x
+            return wrapper
+    return decorate()
+

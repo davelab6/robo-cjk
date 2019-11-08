@@ -33,6 +33,8 @@ import shutil
 from views.drawers import designFrameDrawer
 from views.drawers import referenceViewDrawer
 from utils import files
+from utils import decorators
+
 from resources import characterSets
 from resources import deepCompoMasters_AGB1_FULL
 reload(designFrameDrawer)
@@ -40,6 +42,9 @@ reload(referenceViewDrawer)
 reload(files)
 reload(characterSets)
 reload(deepCompoMasters_AGB1_FULL)
+reload(decorators)
+
+antiRecursive = decorators.antiRecursive
 
 class ProjectEditorWindow(BaseWindowController):
     def __init__(self, RCJKI):
@@ -263,6 +268,7 @@ class LockerIDGroup(Group):
 
         self.basicGlyphsList.setSelection([])
 
+
     @property
     def basicGlyphs(self):
         if self.user is None:
@@ -302,6 +308,7 @@ class LockerIDGroup(Group):
     def extremsListCallback(self, sender):
         pass
 
+    # @antiRecursive
     def basicGlyphsListEditCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
@@ -319,7 +326,8 @@ class LockerIDGroup(Group):
         userLocker._setScript(self.script)
         self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
 
-        # self.setSelectedDCKey(sender)
+        
+        # yield self.basicGlyphsList.set(self.basicGlyphs)
 
     def basicGlyphsListSelectionCallback(self, sender):
         sel = sender.getSelection()

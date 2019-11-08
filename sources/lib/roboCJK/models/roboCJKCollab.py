@@ -93,6 +93,11 @@ class Locker(object):
                         s[step].add(glyph)
 
                 if isinstance(getattr(locker, step), dict):
+                    for glyph in getattr(locker, step).keys():
+                        if self.glyphs[step].keys():
+                            if glyph not in reduce(lambda x, y: x + y, list(self.glyphs[step].keys())):
+                                s[step].add(glyph)
+
                     for value in getattr(locker, step).values():
                         for glyph in value:
                             if self.glyphs[step].values():
@@ -105,17 +110,21 @@ class Locker(object):
         return {step : list(getattr(self, step)) if isinstance(getattr(self, step), set) else getattr(self, step) for step in steps}
 
     def _addGlyphs(self, glyphs):
+
         if steps[self._step] == "set":
             for glyph in glyphs:
                 if self._step in self._allOtherLockedGlyphs and glyph in self._allOtherLockedGlyphs[self._step]: continue
                 getattr(self, self._step).add(glyph)
 
+
         elif steps[self._step] == "dict":
+
             for glyph, values in glyphs.items(): 
                 if self._step in self._allOtherLockedGlyphs:
                     if glyph in self._allOtherLockedGlyphs[self._step]: continue
                     values = [v for v in values if v not in self._allOtherLockedGlyphs[self._step]]
                 getattr(self, self._step)[glyph] = values
+        # print(self._allOtherLockedGlyphs)
 
     def _clearGlyphs(self):
         if hasattr(self, self._step):
