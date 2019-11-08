@@ -452,12 +452,14 @@ class RoboCJKController(object):
 
     def pullMastersGlyphs(self, glyphs, step):
         self.projectEditorController.loadProject([self.projectFileLocalPath])
+        # print(self.reservedGlyphs[step])
         for d in self.allFonts:
             for name, subsetFont in d.items():
                 if name in self.projectFonts:
                     f = self.projectFonts[name]
                     for glyphName in glyphs: 
-                        if glyphName not in self.reservedGlyphs[step]:
+                        if glyphName not in list(reduce(lambda x, y: x + y, list(self.reservedGlyphs[step].values()))):
+                            if glyphName not in f.keys(): continue
                             subsetFont[glyphName] = RGlyph(f[glyphName])
                     subsetFont.save()
 
