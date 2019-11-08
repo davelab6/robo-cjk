@@ -181,7 +181,8 @@ class MainCanvas():
     def mouseUp(self, info):
         self.DCIGlyph = None
         # self.TempDCIGlyph = None
-        self.RCJKI.deepComponentInstantiationController.getDeepComponentsInstances()
+        if self.RCJKI.deepComponentInstantiationController.interface:
+            self.RCJKI.deepComponentInstantiationController.getDeepComponentsInstances()
         self.update()
 
     def keyDown(self, info):
