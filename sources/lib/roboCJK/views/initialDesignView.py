@@ -54,10 +54,16 @@ class InitialDesignWindow(BaseWindowController):
                 minSize = (300,300), 
                 maxSize = (2500,2000))
         
-        self.w.fontsList = List((0,0,200,85),
+        self.w.fontsList = List((0,0,200,65),
                 [],
                 selectionCallback = self.fontsListSelectionCallback,
                 drawFocusRing = False)
+
+        self.w.searchGlyph = SearchBox((0, 65, 200, 20),
+                placeholder="char/name",
+                callback = self.searchGlyphCallback,
+                sizeStyle = 'small'
+                )
 
         self.w.glyphSetList = List((0,85,200,-260),
                 [],
@@ -125,6 +131,23 @@ class InitialDesignWindow(BaseWindowController):
         self.w.bind("became main", self.windowBecameMain)
         self.w.open()
 
+    def searchGlyphCallback(self, sender):
+        t = sender.get()
+        if t.startswith("uni"):
+            code = t.split("uni")[1]
+            if code:
+                try:
+                    char = chr(int(code, 16))
+                except: return
+            else: return
+        elif len(t) > 1:
+            return
+        else: char = t
+        glyphList = self.w.glyphSetList.get()
+        for i, e in enumerate(glyphList):
+            if e["Char"] == char:
+                self.w.glyphSetList.setSelection([i])
+                break
 
     @refreshMainCanvas
     def saveLocalFontButtonCallback(self, sender):
