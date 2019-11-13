@@ -19,12 +19,12 @@ along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 import os
 
 class RoboCJKProject(object):
-    def __init__(self, name, admin):
+    def __init__(self, name, admin, script = ['Hanzi']):
         self.name = name
         self.admin = admin
         self.usersLockers = {'lockers':[]}
         self.masterFontsPaths = {}
-        self.script = ['Hanzi']
+        self.script = script
         self.settings = {
             'designFrame': {'em_Dimension':[1000, 1000],
                             'characterFace': 90,

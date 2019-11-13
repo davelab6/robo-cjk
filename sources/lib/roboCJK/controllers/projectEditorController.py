@@ -50,6 +50,7 @@ class ProjectEditorController(object):
         PostBannerNotification('Git Pull', self.RCJKI.project.name)
 
         self.RCJKI.project.usersLockers = self.RCJKI.collab._toDict
+        
         projectFile = open(self.RCJKI.projectFileLocalPath, 'w')
         d = json.dumps(self.RCJKI.project._toDict, indent=4, separators=(',', ':'))
         projectFile.write(d)
@@ -115,7 +116,8 @@ class ProjectEditorController(object):
 
         projectFile = open(self.RCJKI.projectFileLocalPath, 'r')
         d = json.load(projectFile)
-        self.RCJKI.project = roboCJKProject.RoboCJKProject(d['name'], d['admin'])
+
+        self.RCJKI.project = roboCJKProject.RoboCJKProject(d['name'], d['admin'], d["script"])
         self.RCJKI.project._initWithDict(d)
 
         self.RCJKI.projectFonts = {}

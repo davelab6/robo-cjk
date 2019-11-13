@@ -50,13 +50,14 @@ class InitialDesignController(object):
         self.basicCharacterSet = "".join([self.RCJKI.characterSets[key]['Basic'] for key in self.RCJKI.project.script])
         toAdd = []
         for script in self.RCJKI.project.script:
-            for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
-                for key, extrems in keys2extrems.items():
-                    if key not in self.basicCharacterSet:
-                        self.basicCharacterSet += key
-                    for variants in extrems:
-                        for variant in variants:
-                            toAdd.append(variant)
+            if script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+                for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
+                    for key, extrems in keys2extrems.items():
+                        if key not in self.basicCharacterSet:
+                            self.basicCharacterSet += key
+                        for variants in extrems:
+                            for variant in variants:
+                                toAdd.append(variant)
                             
         self.characterSet = self.basicCharacterSet
         self.characterSet += "".join([c for c in files.unique(toAdd) if c not in self.characterSet])

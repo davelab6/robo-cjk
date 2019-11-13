@@ -92,8 +92,11 @@ class RoboCJKController(object):
         self.projectFileLocalPath = None
         self.collab = None
         self.projectFonts = {}
-        self.scriptsList = ['Hanzi', 'Hangul', 'Kana']
+        
         self.characterSets = characterSets.sets
+        self.scriptsList = list(self.characterSets.keys())
+        # self.scriptsList = ['Hanzi', 'Hangul', 'Kana']
+        
         self.currentFont = None
         self.currentGlyph = None
 

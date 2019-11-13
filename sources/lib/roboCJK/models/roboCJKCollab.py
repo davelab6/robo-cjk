@@ -67,6 +67,7 @@ class RoboCJKCollab(object):
                     step = step
                     )
                 userLocker._setStep(step)
+                userLocker._setScript(locker['script'])
                 userLocker._clearGlyphs()
                 userLocker._addGlyphs(locker['glyphs'][step])
 

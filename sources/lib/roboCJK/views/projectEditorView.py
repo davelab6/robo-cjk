@@ -45,6 +45,7 @@ reload(deepCompoMasters_AGB1_FULL)
 reload(decorators)
 
 antiRecursive = decorators.antiRecursive
+sheetSafety = decorators.sheetSafety
 
 class ProjectEditorWindow(BaseWindowController):
     def __init__(self, RCJKI):
@@ -62,6 +63,7 @@ class ProjectEditorWindow(BaseWindowController):
         self.w.editProjectButton.enable(self.RCJKI.project!=None)
         self.w.open()
 
+    @sheetSafety
     def editProject(self, sender):
         EditProjectSheet(self)
 
@@ -132,6 +134,7 @@ class LockerDCEGroup(Group):
             )
 
         self.keyList.setSelection([])
+        self.setScript()
         
     @property
     def deepComponents(self):
@@ -226,6 +229,46 @@ class LockerDCEGroup(Group):
         sel = sender.getSelection()
         if not sel: return
         self.user = sender.get()[sel[0]]
+
+        if hasattr(self, 'scriptsRadioGroup'):
+            # print(self.c.parent.RCJKI.collab._toDict)
+            lockers = self.c.parent.RCJKI.collab._toDict["lockers"]
+            for locker in lockers:
+                if locker["user"] == self.user:
+                    print(locker["script"])
+                    self.script = locker["script"]
+            getattr(self, 'scriptsRadioGroup').set(self.c.parent.RCJKI.project.script.index(self.script))
+
+        self.keyList.set(self.deepComponentKeys)
+
+
+    def setScript(self):
+        if hasattr(self, 'scriptsRadioGroup'):
+            delattr(self, 'scriptsRadioGroup')
+
+        if len(self.c.parent.RCJKI.project.script) == 1:
+            self.script = self.c.parent.RCJKI.project.script[0]
+
+        elif len(self.c.parent.RCJKI.project.script) > 1:
+            self.scriptsRadioGroup = RadioGroup(
+                (300, 40, 200, 20*len(self.c.parent.RCJKI.project.script)), 
+                self.c.parent.RCJKI.project.script,
+                sizeStyle = "small",
+                callback = self.scriptsRadioGroupCallback
+                )
+            self.scriptsRadioGroup.set(self.c.parent.RCJKI.project.script.index(self.script))
+
+        self.setScriptInLocker()
+
+    def scriptsRadioGroupCallback(self, sender):
+        self.script = self.c.parent.RCJKI.project.script[sender.get()]
+        self.setScriptInLocker()
+
+    def setScriptInLocker(self):
+        if hasattr(self, "user"):
+            userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+            userLocker._setScript(self.script)
+
         self.keyList.set(self.deepComponentKeys)
 
 class LockerIDGroup(Group):
@@ -240,6 +283,8 @@ class LockerIDGroup(Group):
         usersList = [d['user'] for d in self.c.parent.RCJKI.project.usersLockers['lockers']]
         if usersList:
             self.user = usersList[0]
+            print(self.c.parent.RCJKI.project.usersLockers['lockers'][0]["user"],self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"])
+            self.script = self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"]
 
         self.usersList = List((10, 40, 280, 65),
                 usersList,
@@ -267,6 +312,7 @@ class LockerIDGroup(Group):
             )
 
         self.basicGlyphsList.setSelection([])
+        self.setScript()
 
 
     @property
@@ -285,9 +331,10 @@ class LockerIDGroup(Group):
     
     def extremsGlyphs(self, char):
         extrems = ""
-        if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
-            for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
-                extrems += "".join(variant)
+        if self.script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+            if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
+                for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
+                    extrems += "".join(variant)
         return extrems
 # 
     # def getExtrem(self, char):
@@ -338,6 +385,37 @@ class LockerIDGroup(Group):
         
         self.extremsList.set(self.extremsGlyphs(self.selectedChar))
         # deepCompoMasters_AGB1_FULL
+
+
+    def setScript(self):
+        if hasattr(self, 'scriptsRadioGroup'):
+            delattr(self, 'scriptsRadioGroup')
+
+        if len(self.c.parent.RCJKI.project.script) == 1:
+            self.script = self.c.parent.RCJKI.project.script[0]
+
+        elif len(self.c.parent.RCJKI.project.script) > 1:
+            self.scriptsRadioGroup = RadioGroup(
+                (300, 40, 200, 20*len(self.c.parent.RCJKI.project.script)), 
+                self.c.parent.RCJKI.project.script,
+                sizeStyle = "small",
+                callback = self.scriptsRadioGroupCallback
+                )
+            self.scriptsRadioGroup.set(self.c.parent.RCJKI.project.script.index(self.script))
+
+        self.setScriptInLocker()
+
+    def scriptsRadioGroupCallback(self, sender):
+        self.script = self.c.parent.RCJKI.project.script[sender.get()]
+        self.setScriptInLocker()
+
+    def setScriptInLocker(self):
+        if hasattr(self, "user"):
+            # print(self.script)
+            userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+            userLocker._setScript(self.script)
+
+        self.basicGlyphsList.set(self.basicGlyphs)
 
 
     # def keyListSelectionCallback(self, sender):
@@ -397,7 +475,18 @@ class LockerIDGroup(Group):
         sel = sender.getSelection()
         if not sel: return
         self.user = sender.get()[sel[0]]
+
+        if hasattr(self, 'scriptsRadioGroup'):
+            # print(self.c.parent.RCJKI.collab._toDict)
+            lockers = self.c.parent.RCJKI.collab._toDict["lockers"]
+            for locker in lockers:
+                if locker["user"] == self.user:
+                    print(locker["script"])
+                    self.script = locker["script"]
+                    getattr(self, 'scriptsRadioGroup').set(self.c.parent.RCJKI.project.script.index(self.script))
+
         self.basicGlyphsList.set(self.basicGlyphs)
+        
 
 class LockerGroup(Group):
 

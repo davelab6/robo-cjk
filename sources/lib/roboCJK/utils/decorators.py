@@ -45,4 +45,16 @@ def antiRecursive(an = 0, defret = None, initial = []):
                     return x
             return wrapper
     return decorate()
+    
 
+def sheetSafety(func):
+    def caller(self, *args, **kwargs):
+        try:
+            func(self, *args, **kwargs)
+        except Exception as e:
+            try:
+                self.w.close()
+            except Exception:
+                pass
+            raise e
+    return caller
