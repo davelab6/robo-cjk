@@ -96,7 +96,7 @@ class RoboCJKController(object):
         self.characterSets = characterSets.sets
         self.scriptsList = list(self.characterSets.keys())
         # self.scriptsList = ['Hanzi', 'Hangul', 'Kana']
-        
+
         self.currentFont = None
         self.currentGlyph = None
 
@@ -482,7 +482,7 @@ class RoboCJKController(object):
         self.currentGlyphWindow = CurrentGlyphWindow()
         if self.currentGlyphWindow is not None:
             self.currentGlyphWindow.setGlyph(glyph)
-            self.currentGlyphWindow.w.getNSWindow().makeKeyAndOrderFront_(self)
+            # self.currentGlyphWindow.w.getNSWindow().makeKeyAndOrderFront_(self)
         else:
             self.currentGlyphWindow = OpenGlyphWindow(glyph)
             self.currentGlyphWindow.w.bind("became main", self.glyphWindowBecameMain)
