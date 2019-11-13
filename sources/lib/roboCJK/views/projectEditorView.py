@@ -99,8 +99,13 @@ class LockerDCEGroup(Group):
         self.selectedDCKey = None
         self.selectedDCVariant = None
 
+        self.searchGlyph = SearchBox((10, 125, 193, 20),
+            callback=self.searchGlyphCallback,
+            sizeStyle='small'
+            )
+
         checkBox = CheckBoxListCell()
-        self.keyList = List((10, 125, 193, -40),
+        self.keyList = List((10, 145, 193, -40),
             self.deepComponentKeys,
             columnDescriptions = [{"title": "sel", "cell":checkBox, "width":30}, {"title": "char"}],
             selectionCallback = self.keyListSelectionCallback,
@@ -109,7 +114,7 @@ class LockerDCEGroup(Group):
             showColumnTitles = False
             )
 
-        self.variantList = List((203, 125, 193, -40),
+        self.variantList = List((203, 145, 193, -40),
             self.deepComponentVariants,
             selectionCallback = self.variantListSelectionCallback, 
             drawFocusRing = False,
@@ -128,7 +133,7 @@ class LockerDCEGroup(Group):
             sizeStyle = 'small'
             )
 
-        self.extremsList = TextEditor((396, 125, 193, -40),
+        self.extremsList = TextEditor((396, 145, 193, -40),
             self.extremsDCGlyphs,
             callback = self.extremsListCallback
             )
@@ -271,6 +276,15 @@ class LockerDCEGroup(Group):
 
         self.keyList.set(self.deepComponentKeys)
 
+    def searchGlyphCallback(self, sender):
+        char = sender.get()
+        if len(char) > 1: return
+        glyphsList = self.deepComponentKeys
+        for i, c in enumerate(glyphsList):
+            if c["char"] == char:
+                self.keyList.setSelection([i])
+                break
+
 class LockerIDGroup(Group):
 
     def __init__(self, posSize, controller, step):
@@ -293,10 +307,15 @@ class LockerIDGroup(Group):
                 ) 
 
         ####NEW####
+        self.searchGlyph = SearchBox((10, 125, 280, 20),
+            callback=self.searchGlyphCallback,
+            sizeStyle='small'
+            )
+
         self.selectedChar = None
 
         checkBox = CheckBoxListCell()
-        self.basicGlyphsList = List((10, 125, 280, -40),
+        self.basicGlyphsList = List((10, 145, 280, -40),
             self.basicGlyphs,
             columnDescriptions = [{"title": "sel", "cell":checkBox, "width":30}, {"title": "char"}],
             selectionCallback = self.basicGlyphsListSelectionCallback,
@@ -306,7 +325,7 @@ class LockerIDGroup(Group):
             )
 
 
-        self.extremsList = TextEditor((300, 125, -10, -40),
+        self.extremsList = TextEditor((300, 145, -10, -40),
             self.extremsGlyphs(None),
             callback = self.extremsListCallback
             )
@@ -336,21 +355,15 @@ class LockerIDGroup(Group):
                 for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
                     extrems += "".join(variant)
         return extrems
-# 
-    # def getExtrem(self, char):
 
-    #     extrems = ''
-    #     if self.selectedDCKey is not None:
-    #         if self.selectedDCVariant is not None:
-    #             userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
-
-    #             if files.unicodeName(self.selectedDCVariant) in userLocker._deepComponentsEdition_glyphs:
-    #                 extrems += "".join([chr(int(e[3:], 16)) for e in userLocker._deepComponentsEdition_glyphs[files.unicodeName(self.selectedDCVariant)]])
-    #             else:
-    #                 for e in list(self.deepComponents[self.selectedDCKey]):
-    #                     if e[0] != self.selectedDCVariant: continue
-    #                     extrems += "".join(e)
-    #     return extrems
+    def searchGlyphCallback(self, sender):
+        char = sender.get()
+        if len(char) > 1: return
+        glyphsList = self.basicGlyphs
+        for i, c in enumerate(glyphsList):
+            if c["char"] == char:
+                self.basicGlyphsList.setSelection([i])
+                break
 
     def extremsListCallback(self, sender):
         pass
@@ -417,58 +430,6 @@ class LockerIDGroup(Group):
 
         self.basicGlyphsList.set(self.basicGlyphs)
 
-
-    # def keyListSelectionCallback(self, sender):
-    #     self.setSelectedDCKey(sender)      
-
-    # def variantListSelectionCallback(self, sender):
-    #     self.selectedDCVariant = None
-    #     sel = sender.getSelection()
-    #     if sel:
-    #         self.selectedDCVariant = sender.get()[sel[0]]
-
-    #     self.extremsList.set(self.extremsDCGlyphs)
-
-    # def setSelectedDCKey(self, sender):
-    #     sel = sender.getSelection()
-    #     self.selectedDCKey = None
-    #     if sel:
-    #         if self.deepComponentKeys[sender.getSelection()[0]]["sel"]:
-    #             self.selectedDCKey = self.deepComponentKeys[sender.getSelection()[0]]["char"]
-
-    #     self.variantList.set(self.deepComponentVariants)
-    #     self.addVariantButton.show(len(self.deepComponentVariants) != 0)
-    #     self.removeVariantButton.show(len(self.deepComponentVariants) != 0)
-    #     self.extremsList.set(self.extremsDCGlyphs)
-
-    # def addVariantButtonCallback(self, sender):
-    #     pass
-
-    # def removeVariantButtonCallback(self, sender):
-    #     pass
-
-    # def extremsListCallback(self, sender):
-    #     pass
-
-    # def keyListEditCallback(self, sender):
-    #     sel = sender.getSelection()
-    #     if not sel: return
-    #     glyphs = {}
-    #     for k in sender.get():
-    #         if not k["sel"]: continue
-    #         char = k["char"]
-    #         var = {files.unicodeName(e[0]):[files.unicodeName(i) for i in e] for e in list(self.deepComponents[char])}
-    #         glyphs = dict(var, **glyphs)
-
-    #     userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
-        
-    #     userLocker._setStep(self.step)
-    #     userLocker._clearGlyphs()
-    #     userLocker._addGlyphs(glyphs)
-    #     userLocker._setScript(self.script)
-    #     self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
-
-    #     self.setSelectedDCKey(sender)
 
     ####OLD
     def usersListSelectionCallback(self, sender):
