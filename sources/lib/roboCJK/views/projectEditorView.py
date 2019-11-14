@@ -29,6 +29,7 @@ from AppKit import NSColor
 import os
 import random
 import shutil
+import copy
 
 from views.drawers import designFrameDrawer
 from views.drawers import referenceViewDrawer
@@ -112,6 +113,12 @@ class LockerDCEGroup(Group):
             editCallback = self.keyListEditCallback,
             drawFocusRing = False,
             showColumnTitles = False
+            )
+
+        self.getSelectedItems = Button((10, -40, 193, 20),
+            "Get Selected Items",
+            sizeStyle = 'small',
+            callback = self.getSelectedItemsCallback
             )
 
         self.variantList = List((203, 145, 193, -40),
@@ -285,6 +292,15 @@ class LockerDCEGroup(Group):
                 self.keyList.setSelection([i])
                 break
 
+    def getSelectedItemsCallback(self, sender):
+        basicGlyphList = self.keyList
+        sel = basicGlyphList.getSelection()
+        if not sel: return
+        basicGlyph = self.deepComponentKeys
+        for i in sel:
+            basicGlyph[i]['sel'] = 1
+        self.keyList.set(basicGlyph)
+
 class LockerIDGroup(Group):
 
     def __init__(self, posSize, controller, step):
@@ -323,7 +339,11 @@ class LockerIDGroup(Group):
             drawFocusRing = False,
             showColumnTitles = False
             )
-
+        self.getSelectedItems = Button((10, -40, 280, 20),
+            "Get Selected Items",
+            sizeStyle = 'small',
+            callback = self.getSelectedItemsCallback
+            )
 
         self.extremsList = TextEditor((300, 145, -10, -40),
             self.extremsGlyphs(None),
@@ -346,7 +366,14 @@ class LockerIDGroup(Group):
         #     userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
         # return [dict(sel = files.unicodeName(e) in userLocker.glyphs[self.step], char = e) for e in list(self.deepComponents.keys())]
 
-
+    def getSelectedItemsCallback(self, sender):
+        basicGlyphList = self.basicGlyphsList
+        sel = basicGlyphList.getSelection()
+        if not sel: return
+        basicGlyph = self.basicGlyphs
+        for i in sel:
+            basicGlyph[i]['sel'] = 1
+        self.basicGlyphsList.set(basicGlyph)
     
     def extremsGlyphs(self, char):
         extrems = ""
