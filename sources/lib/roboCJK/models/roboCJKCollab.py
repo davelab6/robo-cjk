@@ -21,6 +21,8 @@ from functools import reduce
 steps = {
         "_initialDesign_glyphs": 
             "dict", 
+        "_design_glyphs": 
+            "set", 
         "_deepComponentsEdition_glyphs": 
             "dict",
         "_deepComponentsInstantiation_glyphs": 

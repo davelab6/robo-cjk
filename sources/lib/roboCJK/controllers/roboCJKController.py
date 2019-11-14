@@ -28,6 +28,7 @@ from views.drawers import currentGlyphViewDrawer
 from views import textCenterView
 from controllers import projectEditorController
 from controllers import initialDesignController
+from controllers import designController
 from controllers import deepComponentEditionController
 from controllers import deepComponentInstantiationController
 from controllers import keysAndExtremsEditionController
@@ -53,6 +54,7 @@ reload(currentGlyphViewDrawer)
 reload(textCenterView)
 reload(projectEditorController)
 reload(initialDesignController)
+reload(designController)
 reload(deepComponentEditionController)
 reload(deepComponentInstantiationController)
 reload(keysAndExtremsEditionController)
@@ -155,6 +157,7 @@ class RoboCJKController(object):
         self.properties = ""
         self.projectEditorController = projectEditorController.ProjectEditorController(self)
         self.initialDesignController = initialDesignController.InitialDesignController(self)
+        self.designController = designController.DesignController(self)
         self.deepComponentEditionController = deepComponentEditionController.DeepComponentEditionController(self)
         self.deepComponentInstantiationController = deepComponentInstantiationController.DeepComponentInstantiationController(self)
         self.keysAndExtremsEditionController = keysAndExtremsEditionController.KeysAndExtremsEditionController(self)
@@ -169,6 +172,7 @@ class RoboCJKController(object):
 
         self.designControllers = [
             self.initialDesignController,
+            self.designController,
             self.deepComponentEditionController,
             self.keysAndExtremsEditionController,
             self.deepComponentInstantiationController,
@@ -341,6 +345,7 @@ class RoboCJKController(object):
 
     def updateUI(self):
         self.interface.w.initialDesignEditorButton.enable(self.project!=None)
+        self.interface.w.designEditorButton.enable(self.project!=None)
         self.interface.w.textCenterButton.enable(self.project!=None)
         self.interface.w.deepComponentButton.enable(self.project!=None)
         self.interface.w.inspectorButton.enable(self.project!=None)
@@ -530,6 +535,8 @@ class RoboCJKController(object):
         if window is None:
             return None
         if (row < 0) or (row >= len(glist.get())):
+            return cell
+        if not self.collab._userLocker(self.user).glyphs[step]:
             return cell
         uiGlyph  = glist.get()[row]
         uiGlyphName = uiGlyph['Name']

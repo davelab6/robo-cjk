@@ -42,14 +42,23 @@ class RoboCJKWindow(BaseWindowController):
     def __init__(self, RCJKI):
         super(RoboCJKWindow, self).__init__()
         self.RCJKI = RCJKI
-        self.w = Window((0, 0, 200, 140), 'Robo-CJK')
-        self.w.userTextBox = TextBox((0,0, 200, 20), self.RCJKI.user,alignment='center')
-        self.w.projectEditorButton = Button((0,20,200,20), 'Project', callback=self.openProjectEditor)
-        self.w.initialDesignEditorButton = Button((0,40,200,20), 'Initial Design', callback=self.openInitialDesignEditor)
-        self.w.deepComponentButton = Button((0,60,200,20), 'Deep Components', callback=self.openDeepComponent)
-        self.w.textCenterButton = Button((0,80,200,20), 'Text Center', callback=self.openTextCenter)
-        self.w.inspectorButton = Button((0,100,200,20), 'Inspector', callback=self.openInspector)
-        self.w.settingsButton = Button((0,-20,200,20), 'Settings', callback=self.openSettings)
+        self.w = Window((0, 0, 200, 160), 'Robo-CJK')
+        y = 0
+        self.w.userTextBox = TextBox((0,y, 200, 20), self.RCJKI.user,alignment='center')
+        y += 20
+        self.w.projectEditorButton = Button((0,y,200,20), 'Project', callback=self.openProjectEditor)
+        y += 20
+        self.w.initialDesignEditorButton = Button((0,y,200,20), 'Initial Design', callback=self.openInitialDesignEditor)
+        y += 20
+        self.w.designEditorButton = Button((0,y,200,20), 'Design', callback=self.openDesignEditor)
+        y += 20
+        self.w.deepComponentButton = Button((0,y,200,20), 'Deep Components', callback=self.openDeepComponent)
+        y += 20
+        self.w.textCenterButton = Button((0,y,200,20), 'Text Center', callback=self.openTextCenter)
+        y += 20
+        self.w.inspectorButton = Button((0,y,200,20), 'Inspector', callback=self.openInspector)
+        y += 20
+        self.w.settingsButton = Button((0,y,200,20), 'Settings', callback=self.openSettings)
         self.RCJKI.toggleObservers()
         self.w.bind('close', self.windowCloses)
         self.w.open()
@@ -66,6 +75,10 @@ class RoboCJKWindow(BaseWindowController):
     def openInitialDesignEditor(self, sender):
         self.RCJKI.closeDesignControllers()
         self.RCJKI.initialDesignController.launchInitialDesignInterface()
+
+    def openDesignEditor(self, sender):
+        self.RCJKI.closeDesignControllers()
+        self.RCJKI.designController.launchDesignInterface()
 
     def openDeepComponent(self, sender):
         self.RCJKI.deepComponentsController.launchDeepComponentsInterface()

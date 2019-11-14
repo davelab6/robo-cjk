@@ -313,7 +313,7 @@ class LockerIDGroup(Group):
         usersList = [d['user'] for d in self.c.parent.RCJKI.project.usersLockers['lockers']]
         if usersList:
             self.user = usersList[0]
-            print(self.c.parent.RCJKI.project.usersLockers['lockers'][0]["user"],self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"])
+            # print(self.c.parent.RCJKI.project.usersLockers['lockers'][0]["user"],self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"])
             self.script = self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"]
 
         self.usersList = List((10, 40, 280, 65),
@@ -474,12 +474,172 @@ class LockerIDGroup(Group):
                     getattr(self, 'scriptsRadioGroup').set(self.c.parent.RCJKI.project.script.index(self.script))
 
         self.basicGlyphsList.set(self.basicGlyphs)
-        
 
-class LockerGroup(Group):
+class LockerDGroup(Group):
 
     def __init__(self, posSize, controller, step):
-        super(LockerGroup, self).__init__(posSize)
+        super(LockerDGroup, self).__init__(posSize)
+        self.c = controller
+        self.step = step
+
+        self.script = "Hanzi"
+
+        usersList = [d['user'] for d in self.c.parent.RCJKI.project.usersLockers['lockers']]
+        if usersList:
+            self.user = usersList[0]
+            self.script = self.c.parent.RCJKI.project.usersLockers['lockers'][0]["script"]
+
+        self.usersList = List((10, 40, 280, 65),
+                usersList,
+                selectionCallback = self.usersListSelectionCallback,
+                drawFocusRing = False
+                )        
+
+        # self.charactersTextEditor = TextEditor((10, 125, -10, -40),
+        #         self.charactersTextEditorText,
+        #         callback=self.charactersTextEditorCallback)
+
+        self.searchGlyph = SearchBox((10, 125, 280, 20),
+            callback=self.searchGlyphCallback,
+            sizeStyle='small'
+            )
+
+        self.selectedChar = None
+
+        checkBox = CheckBoxListCell()
+        self.basicGlyphsList = List((10, 145, 280, -40),
+            self.basicGlyphs,
+            columnDescriptions = [{"title": "sel", "cell":checkBox, "width":30}, {"title": "char"}],
+            selectionCallback = self.basicGlyphsListSelectionCallback,
+            editCallback = self.basicGlyphsListEditCallback,
+            drawFocusRing = False,
+            showColumnTitles = False
+            )
+        self.getSelectedItems = Button((10, -40, 280, 20),
+            "Get Selected Items",
+            sizeStyle = 'small',
+            callback = self.getSelectedItemsCallback
+            )
+
+        self.setScript()
+
+    @property
+    def basicGlyphs(self):
+        if self.user is None:
+            return []
+        userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+        return [dict(char = c, sel = files.unicodeName(c) in userLocker.glyphs[self.step]) for c in characterSets.sets[self.script]['Full']]
+
+    def getSelectedItemsCallback(self, sender):
+        basicGlyphList = self.basicGlyphsList
+        sel = basicGlyphList.getSelection()
+        if not sel: return
+        basicGlyph = self.basicGlyphs
+        for i in sel:
+            basicGlyph[i]['sel'] = 1
+        self.basicGlyphsList.set(basicGlyph)
+
+    def searchGlyphCallback(self, sender):
+        char = sender.get()
+        if len(char) > 1: return
+        glyphsList = self.basicGlyphs
+        for i, c in enumerate(glyphsList):
+            if c["char"] == char:
+                self.basicGlyphsList.setSelection([i])
+                break
+
+    def basicGlyphsListEditCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        glyphs = set()
+        for k in sender.get():
+            if not k["sel"]: continue
+            char = k["char"]
+            glyphs.add(files.unicodeName(char))
+
+        userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+        
+        userLocker._setStep(self.step)
+        userLocker._clearGlyphs()
+        userLocker._addGlyphs(glyphs)
+        userLocker._setScript(self.script)
+        self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
+
+        
+        # yield self.basicGlyphsList.set(self.basicGlyphs)
+
+    def basicGlyphsListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: 
+            self.selectedChar = None
+            return 
+        self.selectedChar = sender.get()[sel[0]]["char"]
+        
+        # self.extremsList.set(self.extremsGlyphs(self.selectedChar))
+        # deepCompoMasters_AGB1_FULL
+
+    def setScript(self):
+        if hasattr(self, 'scriptsRadioGroup'):
+            delattr(self, 'scriptsRadioGroup')
+
+        if len(self.c.parent.RCJKI.project.script) == 1:
+            self.script = self.c.parent.RCJKI.project.script[0]
+
+        elif len(self.c.parent.RCJKI.project.script) > 1:
+            self.scriptsRadioGroup = RadioGroup(
+                (300, 40, 200, 20*len(self.c.parent.RCJKI.project.script)), 
+                self.c.parent.RCJKI.project.script,
+                sizeStyle = "small",
+                callback = self.scriptsRadioGroupCallback
+                )
+            self.scriptsRadioGroup.set(self.c.parent.RCJKI.project.script.index(self.script))
+
+        self.setScriptInLocker()
+
+    def scriptsRadioGroupCallback(self, sender):
+        self.script = self.c.parent.RCJKI.project.script[sender.get()]
+        self.setScriptInLocker()
+        self.basicGlyphsList.set(self.basicGlyphs)
+
+    def setScriptInLocker(self):
+        if hasattr(self, "user"):
+            userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+            userLocker._setScript(self.script)
+
+    def usersListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        self.user = sender.get()[sel[0]]
+        # self.charactersTextEditor.set(self.charactersTextEditorText)
+        self.basicGlyphsList.set(self.basicGlyphs)
+
+    @property
+    def charactersTextEditorText(self):
+        if hasattr(self, "user"):
+            userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+            glyphs = userLocker.glyphs[self.step]
+            chars = [chr(int(glyph[3:], 16)) for glyph in glyphs]
+            chars.sort()
+        else: chars = []
+        return ''.join(chars)
+
+    def charactersTextEditorCallback(self, sender):
+        chars = sender.get()
+        sel = self.usersList.getSelection()
+        if not sel: return
+        userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
+        glyphs = [files.unicodeName(char) for char in chars]
+        userLocker._setStep(self.step)
+        userLocker._clearGlyphs()
+        userLocker._addGlyphs(glyphs)
+        userLocker._setScript(self.script)
+        self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
+        
+
+class LockerDCIGroup(Group):
+
+    def __init__(self, posSize, controller, step):
+        super(LockerDCIGroup, self).__init__(posSize)
         self.c = controller
         self.step = step
 
@@ -619,6 +779,7 @@ class EditProjectSheet():
 
         segmentedElements = ["Initial Design",
                             # "Keys and Extremes", 
+                            "Design",
                             "DC Edition", 
                             "DC Instantiation"
                             ]
@@ -629,11 +790,13 @@ class EditProjectSheet():
         self.parent.sheet.lockerGroup.lockerDesignStepSegmentedButton.set(0)
 
         self.parent.sheet.lockerGroup.initialDesign = LockerIDGroup((0, 0, -0, -0), self, "_initialDesign_glyphs")
-        # self.parent.sheet.lockerGroup.keysAndExtrems = LockerGroup((0, 0, -0, -0), self, "_keysAndExtrems_glyphs")
+        # self.parent.sheet.lockerGroup.keysAndExtrems = LockerDCIGroup((0, 0, -0, -0), self, "_keysAndExtrems_glyphs")
         # self.parent.sheet.lockerGroup.keysAndExtrems.show(0)
+        self.parent.sheet.lockerGroup.design = LockerDGroup((0, 0, -0, -0), self, "_design_glyphs")
+        self.parent.sheet.lockerGroup.design.show(0)
         self.parent.sheet.lockerGroup.deepComponentEdition = LockerDCEGroup((0, 0, -0, -0), self, "_deepComponentsEdition_glyphs")
         self.parent.sheet.lockerGroup.deepComponentEdition.show(0)
-        self.parent.sheet.lockerGroup.deepComponentInstantiation = LockerGroup((0, 0, -0, -0), self, "_deepComponentsInstantiation_glyphs")
+        self.parent.sheet.lockerGroup.deepComponentInstantiation = LockerDCIGroup((0, 0, -0, -0), self, "_deepComponentsInstantiation_glyphs")
         self.parent.sheet.lockerGroup.deepComponentInstantiation.show(0)
         
         # self.parent.sheet.lockerGroup.usersList = List((10, 40, 280, 65),
@@ -897,6 +1060,7 @@ class EditProjectSheet():
         groups = [
             self.parent.sheet.lockerGroup.initialDesign,
             # self.parent.sheet.lockerGroup.keysAndExtrems,
+            self.parent.sheet.lockerGroup.design,
             self.parent.sheet.lockerGroup.deepComponentEdition,
             self.parent.sheet.lockerGroup.deepComponentInstantiation
             ]
@@ -1014,6 +1178,7 @@ class EditProjectSheet():
         self.getFonts()
 
         self.parent.sheet.lockerGroup.initialDesign.setScript()
+        self.parent.sheet.lockerGroup.design.setScript()
         self.parent.sheet.lockerGroup.deepComponentEdition.setScript()
         # self.getFonts()
 
