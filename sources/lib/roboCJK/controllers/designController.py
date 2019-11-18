@@ -58,8 +58,7 @@ class DesignController(object):
     def loadProjectFonts(self):
         self.fontsList = []
         self.RCJKI.allFonts = []
-
-    
+        
         for name, file in self.RCJKI.project.masterFontsPaths.items():
             path = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Masters', file)
             designSavepath = os.path.join(os.path.split(self.RCJKI.projectFileLocalPath)[0], 'Temp', 'Design', "".join(self.RCJKI.project.script), file)
@@ -67,29 +66,55 @@ class DesignController(object):
                 files.makepath(designSavepath)
                 f = OpenFont(path, showInterface=False)
                 nf = NewFont(familyName=f.info.familyName, styleName=f.info.styleName, showInterface=False)
+
                 for c in self.characterSet:
                     glyphName = files.unicodeName(c)
-                    if glyphName in f:
+                    if glyphName in f.keys():
+                        
+                        # # nf.newGlyph(glyphName)
+                        # # nf[glyphName] = f[glyphName]     
+                        # nf[glyphName].update()
                         nf.insertGlyph(f[glyphName])
-                f.close()
+                        
+                            
+                        # print(len(f[glyphName]), len(nf[glyphName]))
+                nf.glyphOrder = [files.unicodeName(c) for c in self.characterSet]
+                # f.close()
+                nf.update()
                 nf.save(designSavepath)
-                self.RCJKI.allFonts.append({name:nf})
-                self.fontsList.append(name)
+                # f.close()
+                # self.RCJKI.allFonts.append({name:nf})
+                # self.fontsList.append(name)
             else:
-                f = OpenFont(designSavepath, showInterface=False)
-                
+                nf = OpenFont(designSavepath, showInterface=False)
+                f = OpenFont(path, showInterface=False)
+
                 glyph0rder = []
+                go = nf.glyphOrder
                 for c in self.characterSet:
                     glyphName = files.unicodeName(c)
                     if not glyphName in glyph0rder:
                         glyph0rder.append(glyphName)
-                    if glyphName not in f.keys():
-                        f.newGlyph(glyphName)
-                f.glyphOrder = glyph0rder
-                f.save()
+                        
+                    if glyphName not in nf.keys() and glyphName in f.keys():
+                        nf.insertGlyph(f[glyphName])
 
-                self.RCJKI.allFonts.append({name:f})
-                self.fontsList.append(name)
+                    elif glyphName not in nf.keys():
+                        nf.newGlyph(glyphName)
+                        # if glyphName in f.keys():
+                        #     nf.insertGlyph(f[glyphName])
+
+                toDel = [n for n in go if chr(int(n[3:], 16)) not in self.characterSet]
+                for n in toDel:
+                    nf.removeGlyph(n)
+
+                nf.glyphOrder = glyph0rder
+                nf.save()
+
+
+            self.RCJKI.allFonts.append({name:nf})
+            self.fontsList.append(name)
+            f.close()
 
         if self.interface:
             self.interface.w.fontsList.set(self.fontsList)

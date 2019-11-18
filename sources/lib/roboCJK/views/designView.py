@@ -121,7 +121,7 @@ class DesignWindow(BaseWindowController):
                 callback=self.colorPickerCallback, 
                 color=NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 0))
 
-        self.controller.loadProjectFonts()
+        
         self.w.fontsList.setSelection([])
 
         self.dummyCell = NSCell.alloc().init()
