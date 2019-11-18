@@ -206,17 +206,18 @@ class DeepComponentEditionController(object):
                 for i in range(30):
                     masterDeepComponentsGlyphs.newLayer(str(i))
 
-                masterDCFonts = "".join([self.RCJKI.characterSets[key]['DeepComponentKeys'] for key in self.RCJKI.project.script])
+                masterDCFonts = "".join([self.RCJKI.characterSets[key]['DeepComponentKeys'] for key in self.RCJKI.project.script  if "DeepComponentKeys" in self.RCJKI.characterSets[key]])
                 for masterDCFont in masterDCFonts:
                     glyphName = "DC_"+files.normalizeUnicode(hex(ord(masterDCFont))[2:].upper())
 
                     for script in self.RCJKI.project.script:
-                        if masterDCFont in deepCompoMasters_AGB1_FULL.deepCompoMasters[script]:
-                            for i in range(len(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][masterDCFont])):
-                                gname = glyphName + "_%s"%str(i).zfill(2)
-                                masterDeepComponentsGlyphs.newGlyph(gname)
-                                masterDeepComponentsGlyphs[gname].lib["DeepComponents"]={"DC_00":{}}
-                                masterDeepComponentsGlyphs[gname].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
+                        if script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+                            if masterDCFont in deepCompoMasters_AGB1_FULL.deepCompoMasters[script]:
+                                for i in range(len(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][masterDCFont])):
+                                    gname = glyphName + "_%s"%str(i).zfill(2)
+                                    masterDeepComponentsGlyphs.newGlyph(gname)
+                                    masterDeepComponentsGlyphs[gname].lib["DeepComponents"]={"DC_00":{}}
+                                    masterDeepComponentsGlyphs[gname].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
                 for glyph in masterDeepComponentsGlyphs:
                     for i in range(30):
                         masterDeepComponentsGlyphs.getLayer(str(i)).insertGlyph(glyph)

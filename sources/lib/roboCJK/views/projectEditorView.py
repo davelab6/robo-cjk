@@ -372,7 +372,7 @@ class LockerIDGroup(Group):
         if not sel: return
         basicGlyph = self.basicGlyphs
         for i in sel:
-            basicGlyph[i]['sel'] = 1
+            basicGlyph[i]['sel'] = not basicGlyph[i]['sel']
         self.basicGlyphsList.set(basicGlyph)
     
     def extremsGlyphs(self, char):
@@ -536,7 +536,7 @@ class LockerDGroup(Group):
         if not sel: return
         basicGlyph = self.basicGlyphs
         for i in sel:
-            basicGlyph[i]['sel'] = 1
+            basicGlyph[i]['sel'] = not basicGlyph[i]['sel']
         self.basicGlyphsList.set(basicGlyph)
 
     def searchGlyphCallback(self, sender):
