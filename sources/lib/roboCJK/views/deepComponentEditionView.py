@@ -262,7 +262,8 @@ class DeepComponentEditionWindow(BaseWindowController):
         else:
 
             self.RCJKI.currentGlyph = f.getLayer("foreground")[g.name]
-            self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
+            if self.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
+                self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
 
         self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
         self.updateImageSliderList()

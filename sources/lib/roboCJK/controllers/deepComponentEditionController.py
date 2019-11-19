@@ -100,7 +100,10 @@ class DeepComponentEditionController(object):
             self.interface.canvasDrawer.extremDCGlyph = None
         elif char:
             glyphName = files.unicodeName(char)
-            self.interface.canvasDrawer.extremDCGlyph = self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][glyphName]
+            if glyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
+                self.interface.canvasDrawer.extremDCGlyph = self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][glyphName]
+            else: 
+                self.interface.canvasDrawer.extremDCGlyph = None
         else:
             self.interface.canvasDrawer.extremDCGlyph = None
         self.interface.w.mainCanvas.update()

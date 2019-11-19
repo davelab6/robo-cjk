@@ -87,7 +87,7 @@ class MainCanvas():
         # self.pointsTest = px, py
         if command:
             DeepComponentsInstances = self.RCJKI.DeepComponentsInstances
-            if self.controller.tempDeepComponent is not None:
+            if hasattr(self.controller, "tempDeepComponent") and self.controller.tempDeepComponent is not None:
                 selectedDeepComponentGlyph, layersInfos, offset = self.controller.tempDeepComponent
                 gi = interpolations.deepolation(RGlyph(), selectedDeepComponentGlyph, layersInfos)
                 gi.moveBy((offset[0], offset[1]))

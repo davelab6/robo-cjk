@@ -160,12 +160,15 @@ class LockerDCEGroup(Group):
             userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         else:
             userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+        # print(userLocker.glyphs[self.step])
         return [dict(sel = files.unicodeName(e) in userLocker.glyphs[self.step], char = e) for e in list(self.deepComponents.keys())]
 
     @property
     def deepComponentVariants(self):
         variants = []
         if self.selectedDCKey is not None:
+            # print(self.selectedDCKey)
+            # print(self.deepComponents[self.selectedDCKey])
             variants = [e[0] for e in list(self.deepComponents[self.selectedDCKey])]
         return variants
 
@@ -199,9 +202,10 @@ class LockerDCEGroup(Group):
         sel = sender.getSelection()
         self.selectedDCKey = None
         if sel:
+            print(sel)
             if self.deepComponentKeys[sender.getSelection()[0]]["sel"]:
                 self.selectedDCKey = self.deepComponentKeys[sender.getSelection()[0]]["char"]
-
+        print(self.selectedDCKey)
         self.variantList.set(self.deepComponentVariants)
         self.addVariantButton.show(len(self.deepComponentVariants) != 0)
         self.removeVariantButton.show(len(self.deepComponentVariants) != 0)
