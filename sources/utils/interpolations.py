@@ -108,24 +108,18 @@ def lengtha(a):
 def normalize(a):
    l = lengtha(a)
    if l == 0:
-       l = 1e-10
+       l = 1e-10 #FIXME: just return a or throw an exception
    return([a[0]/l, a[1]/l])
 
 def deepolation(newGlyph, 
                 masterGlyph, 
-                # pathsGlyphs, 
                 layersInfo = {}
                 ):
-
     if not deepCompatible(masterGlyph, list(layersInfo.keys())):
         return False
 
     pen = PointToSegmentPen(newGlyph.getPen())
     contoursList = []
-    # pathsGlyph = None
-    # if masterGlyph.name in pathsGlyphs:
-    #     pathsGlyph = pathsGlyphs[masterGlyph.name]
-    allpointsIndex = 0
     for contourIndex, contour in enumerate(masterGlyph):
 
         pointsList = []
@@ -137,38 +131,21 @@ def deepolation(newGlyph,
 
             deltaX, deltaY = 0.0, 0.0
             for layerName, value in layersInfo.items():
-                # pathGlyph = None
-                # if pathsGlyph:
-                #     pathGlyph = pathsGlyph['paths_'+layerName]
 
                 ratio = value / 1000.0
-                # ratioY = values[1] / 1000.0
 
                 layerGlyph = masterGlyph.getLayer(layerName)
 
-                pathGlyph = layerGlyph.lib['NLIPoints']
-
                 pI = layerGlyph[contourIndex].points[pointIndex]
-                pxI, pyI = pI.x, pI.y
 
-                dx = pxI-px
-                dy = pyI-py
-                n = normalize((-dy, dx))
-                curve = ((px, py), (px+dx/3+n[0]*50, py+dy/3+n[1]*50), (px+dx*2/3+n[0]*50, py+dy*2/3+n[1]*50), (pxI, pyI))
-                if pathGlyph:
-                    # curve = [(p.x, p.y) for p in pathGlyph[allpointsIndex].points]
-                    curve = [
-                        (px, py),
-                        (pathGlyph[contourIndex][pointIndex][0][0], pathGlyph[contourIndex][pointIndex][0][1]),
-                        (pathGlyph[contourIndex][pointIndex][1][0],pathGlyph[contourIndex][pointIndex][1][1]),
-                        (pxI, pyI),
-                        ]
-                    
-                nli = getCubicPoint(ratio, curve[0], curve[1], curve[2], curve[3])
-                deltaX += nli[0] - px
-                deltaY += nli[1] - py
-
-            allpointsIndex += 1
+                if 'NLIPoints' in layerGlyph.lib: # interpolation along a cubic Bezier
+                    offPts = layerGlyph.lib['NLIPoints'][contourIndex][pointIndex]
+                    nli = getCubicPoint(ratio, (px,py), offPts[0], offPts[1], (pI.x,pI.y))
+                    deltaX += nli[0] - px
+                    deltaY += nli[1] - py
+                else: # linear interpolation
+                    deltaX += ratio * (px - pI.x)
+                    deltaY += ratio * (py - pI.y)
 
             newX = int(px + deltaX)
             newY = int(py + deltaY)
@@ -177,34 +154,33 @@ def deepolation(newGlyph,
 
         contoursList.append(pointsList)
 
-        for pointsList in contoursList:
+    for pointsList in contoursList:
 
-            pen.beginPath()
-            lenc = len(pointsList)
+        lenc = len(pointsList)
+        if lenc <= 1: continue
+        pen.beginPath()
 
-            for pointIndex, (p, t, point) in enumerate(pointsList):
+        for pointIndex, (p, t, point) in enumerate(pointsList):
+            prevp, prevt, prevPoint = pointsList[pointIndex-1]
+            prevprevp, prevprevt, prevprevPoint = pointsList[pointIndex-2]
+            nextp, nextt, nextPoint = pointsList[(pointIndex+1)%lenc]
+            nextnextp, nextnextt, nextnextPoint = pointsList[(pointIndex+2)%lenc]
 
-                if lenc > 1:
-                    prevp, prevt, prevPoint = pointsList[pointIndex-1]
-                    prevprevp, prevprevt, prevprevPoint = pointsList[pointIndex-2]
-                    nextp, nextt, nextPoint = pointsList[(pointIndex+1)%lenc]
-                    nextnextp, nextnextt, nextnextPoint = pointsList[(pointIndex+2)%lenc]
+            if prevPoint.smooth and point.type == 'offcurve':
 
-                    if prevPoint.smooth and point.type == 'offcurve':
+                dx, dy = prevp[0] - prevprevp[0], prevp[1] - prevprevp[1]
+                d = distance(p, prevp)
+                dprev = normalize([dx, dy])
+                p = [prevp[0]+ d*dprev[0], prevp[1]+d*dprev[1]]
 
-                        dx, dy = prevp[0] - prevprevp[0], prevp[1] - prevprevp[1]
-                        d = distance(p, prevp)
-                        dprev = normalize([dx, dy])
-                        p = [prevp[0]+ d*dprev[0], prevp[1]+d*dprev[1]]
+            if nextPoint.smooth and point.type == 'offcurve':
 
-                    if nextPoint.smooth and point.type == 'offcurve':
+                dx, dy = nextp[0] - nextnextp[0], nextp[1] - nextnextp[1]
+                d = distance(p, nextp)
+                dnext = normalize([dx, dy])
+                p = [nextp[0]+ d*dnext[0], nextp[1]+d*dnext[1]]
 
-                        dx, dy = nextp[0] - nextnextp[0], nextp[1] - nextnextp[1]
-                        d = distance(p, nextp)
-                        dnext = normalize([dx, dy])
-                        p = [nextp[0]+ d*dnext[0], nextp[1]+d*dnext[1]]
-
-                    pen.addPoint((int(p[0]), int(p[1])), t)
-            pen.endPath()
+            pen.addPoint((int(p[0]), int(p[1])), t)
+        pen.endPath()
 
     return newGlyph
