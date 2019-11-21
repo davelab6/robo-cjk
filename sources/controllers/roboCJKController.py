@@ -70,11 +70,11 @@ reload(shapeTool)
 reload(scalingEditTool)
 reload(interpolations)
 
-commandDown = 1048576
-shiftDown = 131072
-capLockDown = 65536
-controlDown = 262144
-optionDown = 524288
+capLockDown = 0x010000  # 65536
+shiftDown   = 0x020000  # 131072
+controlDown = 0x040000  # 262144
+optionDown  = 0x080000  # 524288
+commandDown = 0x100000  # 1048576
 
 kMissingColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 1)
 kThereColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 1, 0, 1)
@@ -344,11 +344,13 @@ class RoboCJKController(object):
         self.updateUI()
 
     def updateUI(self):
-        self.interface.w.initialDesignEditorButton.enable(self.project!=None)
-        self.interface.w.designEditorButton.enable(self.project!=None)
-        self.interface.w.textCenterButton.enable(self.project!=None)
-        self.interface.w.deepComponentButton.enable(self.project!=None)
-        self.interface.w.inspectorButton.enable(self.project!=None)
+        h= (self.project != None)
+        w = self.interface.w
+        w.initialDesignEditorButton.enable(h)
+        w.designEditorButton.enable(h)
+        w.textCenterButton.enable(h)
+        w.deepComponentButton.enable(h)
+        w.inspectorButton.enable(h)
 
     def launchTextCenterInterface(self):
         if self.textCenterInterface is None:
@@ -480,6 +482,7 @@ class RoboCJKController(object):
         rootfolder = os.path.split(self.projectFileLocalPath)[0]
         gitEngine = git.GitEngine(rootfolder)
         gitEngine.pull()
+        # FIXME: I think we could shorten to: `for f in self.projectFonts.values():`
         for name in self.projectFonts:
             f = self.projectFonts[name]
             f.save()
