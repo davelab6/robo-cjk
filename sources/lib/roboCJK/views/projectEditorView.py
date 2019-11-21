@@ -614,6 +614,15 @@ class LockerDGroup(Group):
         sel = sender.getSelection()
         if not sel: return
         self.user = sender.get()[sel[0]]
+
+        if hasattr(self, 'scriptsRadioGroup'):
+            # print(self.c.parent.RCJKI.collab._toDict)
+            lockers = self.c.parent.RCJKI.collab._toDict["lockers"]
+            for locker in lockers:
+                if locker["user"] == self.user:
+                    # print(locker["script"])
+                    self.script = locker["script"]
+                    getattr(self, 'scriptsRadioGroup').set(self.c.parent.RCJKI.project.script.index(self.script))
         # self.charactersTextEditor.set(self.charactersTextEditorText)
         self.basicGlyphsList.set(self.basicGlyphs)
 
