@@ -126,10 +126,12 @@ class MainCanvas():
             elif self.RCJKI.designStep == '_deepComponentsInstantiation_glyphs':
                 if self.DCIGlyph is not None:
                 # print(self.DCIGlyph[0])
-                    x, y = self.DCIGlyph[0]['DeepComponentInstance']["offset"]
+                    # if "offset" not in self.DCIGlyph[0]['DeepComponentInstance']:
+                    #     self.DCIGlyph[0]['DeepComponentInstance']["offset"] = (0, 0)
+                    x, y = self.DCIGlyph[0]['DeepComponentInstance'].get("offset", (0, 0))
                     x += deltaX
                     y -= deltaY
-                    self.DCIGlyph[0]['DeepComponentInstance']["offset"] = [x, y]
+                    self.DCIGlyph[0]['DeepComponentInstance']["offset"] = (x, y)
                     self.RCJKI.DeepComponentsInstances[self.DCIGlyph[1]].moveBy((deltaX, -deltaY))
 
                 if self.TempDCIGlyph is not None:

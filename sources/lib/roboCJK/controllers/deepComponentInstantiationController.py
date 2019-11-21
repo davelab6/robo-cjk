@@ -124,18 +124,20 @@ class DeepComponentInstantiationController(object):
                 dci = dc["DeepComponentInstance"]
                 name = dc["DeepComponentName"]
                 # print("--------------")
-                if not "Name" in dci: continue
-                dcGlyph = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name]
-                layersInfos = dcGlyph.lib["DeepComponents"][dci["Name"]]
-                # print(dcGlyph.lib["DeepComponents"][dci["Name"]])
-                # print("--------------\n")
-                DCG = interpolations.deepolation(RGlyph(), 
-                        dcGlyph.getLayer("foreground"), 
-                        # self.pathsGlyphs, 
-                        layersInfos)
-                x, y = dci["offset"]
-                DCG.moveBy((x, y))
-                instances.append(DCG)
+                if not "Name" in dci: 
+                    instances.append(RGlyph())
+                else:
+                    dcGlyph = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont][name]
+                    layersInfos = dcGlyph.lib["DeepComponents"][dci["Name"]]
+                    # print(dcGlyph.lib["DeepComponents"][dci["Name"]])
+                    # print("--------------\n")
+                    DCG = interpolations.deepolation(RGlyph(), 
+                            dcGlyph.getLayer("foreground"), 
+                            # self.pathsGlyphs, 
+                            layersInfos)
+                    x, y = dci["offset"]
+                    DCG.moveBy((x, y))
+                    instances.append(DCG)
         # for DC in self.RCJKI.currentGlyph.lib['DeepComponentsInfos']:
         #     # name = "uni"
         #     name = DC["DeepComponentName"]
