@@ -389,12 +389,16 @@ class LockerIDGroup(Group):
 
     def searchGlyphCallback(self, sender):
         char = sender.get()
-        if len(char) > 1: return
         glyphsList = self.basicGlyphs
-        for i, c in enumerate(glyphsList):
-            if c["char"] == char:
-                self.basicGlyphsList.setSelection([i])
-                break
+        index = [i for i, c in enumerate(glyphsList) if c["char"] in char]
+        self.basicGlyphsList.setSelection(index)
+        # char = sender.get()
+        # if len(char) > 1: return
+        # glyphsList = self.basicGlyphs
+        # for i, c in enumerate(glyphsList):
+        #     if c["char"] == char:
+        #         self.basicGlyphsList.setSelection([i])
+        #         break
 
     def extremsListCallback(self, sender):
         pass
@@ -545,12 +549,16 @@ class LockerDGroup(Group):
 
     def searchGlyphCallback(self, sender):
         char = sender.get()
-        if len(char) > 1: return
         glyphsList = self.basicGlyphs
-        for i, c in enumerate(glyphsList):
-            if c["char"] == char:
-                self.basicGlyphsList.setSelection([i])
-                break
+        index = [i for i, c in enumerate(glyphsList) if c["char"] in char]
+        self.basicGlyphsList.setSelection(index)
+        # char = sender.get()
+        # if len(char) > 1: return
+        # glyphsList = self.basicGlyphs
+        # for i, c in enumerate(glyphsList):
+        #     if c["char"] == char:
+        #         self.basicGlyphsList.setSelection([i])
+        #         break
 
     def basicGlyphsListEditCallback(self, sender):
         sel = sender.getSelection()
