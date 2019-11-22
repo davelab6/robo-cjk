@@ -24,6 +24,7 @@ from utils import files
 from utils import git
 from mojo.roboFont import *
 from mojo.UI import PostBannerNotification
+from AppKit import *
 from resources import deepCompoMasters_AGB1_FULL
 from resources import deepCompo2Chars
 from resources import chars2deepCompo
@@ -90,6 +91,62 @@ class DeepComponentInstantiationController(object):
         # print(self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs['_deepComponentsInstantiation_glyphs'])
         # print(self.characterSet, deepCompoMasters_AGB1_FULL.Hanzi)
 
+    def getDCVariant(self, selectedKey, dcFont):
+        selectedKeyCode = files.normalizeUnicode(hex(ord(selectedKey))[2:].upper())
+        DCV = list(filter(lambda n: selectedKeyCode in n.split('_'), dcFont.keys()))
+        return [dict(Char = chr(int(n.split("_")[1],16)), Name = n) for n in sorted(DCV)]
+
+    def getFrozenDC(self):
+        tempFDC = NewFont(showUI = False)
+        DCGlyphsList = []
+        for FDC, layersInfos in self.interface.selectedDeepComponentGlyph.lib["DeepComponents"].items():
+            tempFDC.newGlyph(FDC)
+            tempFDC[FDC].appendGlyph(interpolations.deepolation(RGlyph(), self.interface.selectedDeepComponentGlyph, layersInfos))
+            tempFDC[FDC].width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
+            DCGlyphsList.append(tempFDC[FDC])
+
+        self.interface.w.frozenDCGroup.frozenDCList.set(DCGlyphsList)
+
+    def getSlidersInfos(self, layerName, value):
+        g = self.interface.selectedDeepComponentGlyph.getLayer(layerName)
+        emDimensions = self.RCJKI.project.settings['designFrame']['em_Dimension']
+        pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
+
+        d = {'Layer': layerName,
+            'Image': NSImage.alloc().initWithData_(pdfData),
+            'Values': value,
+            # 'NLI': 'NLI'
+            }
+        return d
+
+    def setSlider(self):
+        self.RCJKI.layersInfos = {}
+        self.interface.slidersValuesList = []
+
+        layers = [l.name for l in list(filter(lambda l: len(self.interface.selectedDeepComponentGlyph.getLayer(l.name)), self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont].layers))]
+        for layerName in layers:
+            if layerName == "foreground": continue
+            value = 0
+
+            self.interface.slidersValuesList.append(self.getSlidersInfos(layerName, value))
+            self.RCJKI.layersInfos[layerName] = value
+
+    def setCurrentGlyphLib(self):
+        if "DeepComponentsInfos" not in self.RCJKI.currentGlyph.lib:
+            self.RCJKI.currentGlyph.lib["DeepComponentsInfos"]=[]
+            for e in self.interface.currentGlyphComposition:
+                name = e["Name"]
+                char = e["Char"]
+                dcFont = self.RCJKI.fonts2DCFonts[self.RCJKI.currentFont]
+                # print(self.controller.getDCVariant(char, dcFont))
+                self.RCJKI.currentGlyph.lib["DeepComponentsInfos"].append(
+                    dict(
+                        DeepComponentName = self.getDCVariant(char, dcFont)[0]["Name"],
+                        DeepComponentInstance = {}
+                        )
+                    # {self.controller.getDCVariant(char, dcFont)[0]["Name"]:{}}
+                    )
+
     def updateGlyphSetList(self):
         l = []
         if self.RCJKI.currentFont is not None:
@@ -113,8 +170,6 @@ class DeepComponentInstantiationController(object):
 
     def getDeepComponentsInstances(self):
         instances = []
-
-
         """
         [{'DeepComponentName': 'DC_8279_00', 'DeepComponentInstance': {'Name': 'DC_05', 'offset': (0, 0)}}, {'DeepComponentName': 'DC_79BE_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_722B_00', 'DeepComponentInstance': {}}, {'DeepComponentName': 'DC_5189_00', 'DeepComponentInstance': {}}]
         """
@@ -146,37 +201,6 @@ class DeepComponentInstantiationController(object):
         self.RCJKI.DeepComponentsInstances = instances
 
         # return instances
-
-    # def updateDeepComponentsSetList(self, glyphName):
-    #     l = []
-    #     if self.RCJKI.currentFont is not None:
-    #         dcset = list(filter(lambda x: glyphName[3:] in x, list(self.RCJKI.currentFont.keys())))
-    #         for name in sorted(dcset):
-    #             _, gname, index = name.split("_")
-    #             script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
-    #             code = deepCompoMasters_AGB1_FULL.deepCompoMasters[script][chr(int(gname,16))][int(index)][0]
-    #             l.append(({'#':'', 'Char':code, 'Name':name, 'MarkColor':''}))
-    #     self.interface.w.deepComponentsSetList.set(l)
-    #     if len(l):
-    #         self.interface.w.deepComponentsSetList.setSelection([0])
-    #     self.setExtremDCGlyph(None)
-
-    # def updateExtemeList(self, selectedDCGlyphName):
-    #     _, code, index = selectedDCGlyphName.split('_')
-    #     script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
-    #     l = ["None"]
-    #     l.extend(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][chr(int(code,16))][int(index)])
-    #     self.interface.w.extremsList.setItems(l)
-
-    # def setExtremDCGlyph(self, char):
-    #     if char == "None":
-    #         self.interface.canvasDrawer.extremDCGlyph = None
-    #     elif char:
-    #         glyphName = files.unicodeName(char)
-    #         self.interface.canvasDrawer.extremDCGlyph = self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][glyphName]
-    #     else:
-    #         self.interface.canvasDrawer.extremDCGlyph = None
-    #     self.interface.w.mainCanvas.update()
 
 
     def saveSubsetFonts(self):
@@ -364,43 +388,4 @@ class DeepComponentInstantiationController(object):
         if self.interface:
             self.interface.w.fontsList.set(self.fontsList)
 
-    # def makeNLIPaths(self, reset=False):
-    #     g = self.RCJKI.currentGlyph
-    #     if not g: return
-    #     if g.name in self.RCJKI.pathsGlyphs and reset == False: return
-    #     # pathsGlyphs = {}
-    #     start = g.getLayer('foreground')
-    #     for end in g.layers:
-    #         endName = end.layerName
-    #         if endName == 'foreground': continue
-    #         if len(end) == 0: continue
-
-    #         # pathGlyph = RGlyph()
-    #         # pathGlyph.name = 'paths_%s' % endName
-            
-    #         # pen = pathGlyph.getPen()
-
-    #         if reset or "NLIPoints" not in end.lib:
-    #             offList = []
-
-    #             for cs, ce in zip(start, end):
-    #                 of = []
-    #                 for j, p in enumerate(cs.points):
-    #                     # pen.moveTo((p.x, p.y))
-    #                     pe = ce.points[j]
-    #                     # pen.curveTo( (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3),  (pe.x, pe.y) )
-    #                     # pen.endPath()
-
-    #                     of.append([
-    #                         (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), 
-    #                         (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3)
-    #                         ])
-    #                 offList.append(of)
-    #             # pathsGlyphs[pathGlyph.name] = pathGlyph
-
-    #             end.lib["NLIPoints"] = offList
-    #         # print(end.lib["NLIPoints"])
-
-    #     # self.RCJKI.pathsGlyphs[g.name] = pathsGlyphs
-    #     # print(self.RCJKI.pathsGlyphs)
 
