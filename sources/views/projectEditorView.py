@@ -140,8 +140,9 @@ class LockerDCEGroup(Group):
             sizeStyle = 'small'
             )
 
+        self.extremsGlyphs = {}
         self.extremsList = TextEditor((396, 145, 193, -40),
-            self.extremsDCGlyphs,
+            self.extremsDCGlyphs(None),
             callback = self.extremsListCallback
             )
 
@@ -172,20 +173,60 @@ class LockerDCEGroup(Group):
             variants = [e[0] for e in list(self.deepComponents[self.selectedDCKey])]
         return variants
 
-    @property
-    def extremsDCGlyphs(self):
-        extrems = ''
-        if self.selectedDCKey is not None:
-            if self.selectedDCVariant is not None:
-                userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
+    
+    def extremsDCGlyphs(self, char, variant = None):
+        if char is not None:
+            if variant is not None:
+                if char not in self.extremsGlyphs:
+                    self.extremsGlyphs[char] = {}
+                if variant not in self.extremsGlyphs[char]:
+                    extrems = ''
+            
+                    userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
 
-                if files.unicodeName(self.selectedDCVariant) in userLocker._deepComponentsEdition_glyphs:
-                    extrems += "".join([chr(int(e[3:], 16)) for e in userLocker._deepComponentsEdition_glyphs[files.unicodeName(self.selectedDCVariant)]])
+                    if files.unicodeName(variant) in userLocker._deepComponentsEdition_glyphs:
+                        extrems += "".join([chr(int(e[3:], 16)) for e in userLocker._deepComponentsEdition_glyphs[files.unicodeName(variant)]])
+                    else:
+                        for e in list(self.deepComponents[char]):
+                            if e[0] != variant: continue
+                            extrems += "".join(e)
+
+                    # self.extremsGlyphs[char] = {}
+                    self.extremsGlyphs[char][variant] = extrems
+                    # elif
+                    print(extrems)
+                    return extrems
                 else:
-                    for e in list(self.deepComponents[self.selectedDCKey]):
-                        if e[0] != self.selectedDCVariant: continue
-                        extrems += "".join(e)
-        return extrems
+
+                    print(self.extremsGlyphs[char][variant])
+                    return self.extremsGlyphs[char][variant]
+        else:
+            return ""
+
+    def extremsListCallback(self, sender):
+        print("coucoalkefhjoiaejfopeakdpoeau")
+        self.extremsGlyphs[self.selectedDCKey][self.selectedDCVariant] = sender.get()
+        print(self.extremsGlyphs[self.selectedDCKey][self.selectedDCVariant])
+        self.setGlyphs(self.keyList.get())
+
+    # def extremsListCallback(self, sender):
+    #     if self.script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+    #         if self.selectedChar in self.extremsGlyphs:
+    #             self.extremsGlyphs[self.selectedChar] = sender.get()
+        # self.setGlyphs(self.basicGlyphsList.get())
+
+    # def getExtremsGlyphs(self, char):
+    #     if char not in self.extremsGlyphs:
+    #         extrems = ""
+    #         if self.script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+    #             if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
+    #                 for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
+    #                     extrems += "".join(variant)
+
+    #         self.extremsGlyphs[char] = extrems
+    #         return extrems
+    #     else:
+    #         return self.extremsGlyphs[char]
 
     def keyListSelectionCallback(self, sender):
         self.setSelectedDCKey(sender)      
@@ -196,20 +237,20 @@ class LockerDCEGroup(Group):
         if sel:
             self.selectedDCVariant = sender.get()[sel[0]]
 
-        self.extremsList.set(self.extremsDCGlyphs)
+        self.extremsList.set(self.extremsDCGlyphs(self.selectedDCKey, variant = self.selectedDCVariant))
 
     def setSelectedDCKey(self, sender):
         sel = sender.getSelection()
         self.selectedDCKey = None
         if sel:
-            print(sel)
+            # print(sel)
             if self.deepComponentKeys[sender.getSelection()[0]]["sel"]:
                 self.selectedDCKey = self.deepComponentKeys[sender.getSelection()[0]]["char"]
-        print(self.selectedDCKey)
+        # print(self.selectedDCKey)
         self.variantList.set(self.deepComponentVariants)
         self.addVariantButton.show(len(self.deepComponentVariants) != 0)
         self.removeVariantButton.show(len(self.deepComponentVariants) != 0)
-        self.extremsList.set(self.extremsDCGlyphs)
+        self.extremsList.set(self.extremsDCGlyphs(self.selectedDCKey, variant = self.selectedDCVariant))
 
     def addVariantButtonCallback(self, sender):
         pass
@@ -217,19 +258,27 @@ class LockerDCEGroup(Group):
     def removeVariantButtonCallback(self, sender):
         pass
 
-    def extremsListCallback(self, sender):
-        pass
+    # def extremsListCallback(self, sender):
+    #     pass
 
     def keyListEditCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
+        self.setGlyphs(sender.get())
+
+    def setGlyphs(self, glyphlist):
         glyphs = {}
-        for k in sender.get():
+        for k in glyphlist:
             if not k["sel"]: continue
             char = k["char"]
-            var = {files.unicodeName(e[0]):[files.unicodeName(i) for i in e] for e in list(self.deepComponents[char])}
-            glyphs = dict(var, **glyphs)
-
+            for variant in [e[0] for e in list(self.deepComponents[char])]:
+                # print("extresm",self.extremsDCGlyphs(char, variant))
+                # print("variant", variant)
+                var = {files.unicodeName(variant):[files.unicodeName(e) for e in self.extremsDCGlyphs(char, variant)]}
+                # print("var1", var)
+                # print("var2", {files.unicodeName(variant):[files.unicodeName(e)] for e in list(self.extremsDCGlyphs(char, variant))})
+                glyphs = dict(var, **glyphs)
+        # print(glyphs)
         userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         
         userLocker._setStep(self.step)
@@ -238,7 +287,7 @@ class LockerDCEGroup(Group):
         userLocker._setScript(self.script)
         self.c.parent.RCJKI.project.usersLockers = self.c.parent.RCJKI.collab._toDict
 
-        self.setSelectedDCKey(sender)
+        self.setSelectedDCKey(self.keyList)
 
     ####OLD
     def usersListSelectionCallback(self, sender):
@@ -343,7 +392,12 @@ class LockerIDGroup(Group):
             drawFocusRing = False,
             showColumnTitles = False
             )
-        self.getSelectedItems = Button((10, -40, 280, 20),
+
+        self.deselectItems = Button((10, -40, 90, 20),
+            "Deselect",
+            sizeStyle = 'small',
+            callback= self.deselectItemsCallback)
+        self.getSelectedItems = Button((100, -40, 190, 20),
             "Get Selected Items",
             sizeStyle = 'small',
             callback = self.getSelectedItemsCallback
@@ -381,6 +435,15 @@ class LockerIDGroup(Group):
         basicGlyph = self.basicGlyphs
         for i in sel:
             basicGlyph[i]['sel'] = not basicGlyph[i]['sel']
+        self.basicGlyphsList.set(basicGlyph)
+
+    def deselectItemsCallback(self, sender):
+        basicGlyphList = self.basicGlyphsList
+        sel = basicGlyphList.getSelection()
+        if not sel: return
+        basicGlyph = self.basicGlyphs
+        for i in sel:
+            basicGlyph[i]['sel'] = 0
         self.basicGlyphsList.set(basicGlyph)
     
     def getExtremsGlyphs(self, char):
