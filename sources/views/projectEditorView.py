@@ -348,9 +348,9 @@ class LockerIDGroup(Group):
             sizeStyle = 'small',
             callback = self.getSelectedItemsCallback
             )
-
+        self.extremsGlyphs = {}
         self.extremsList = TextEditor((300, 145, -10, -40),
-            self.extremsGlyphs(None),
+            self.getExtremsGlyphs(None),
             callback = self.extremsListCallback
             )
 
@@ -363,7 +363,11 @@ class LockerIDGroup(Group):
         if self.user is None:
             return []
         userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
-        return [dict(char = c, sel = files.unicodeName(c) in userLocker.glyphs[self.step]) for c in characterSets.sets[self.script]['Basic']]
+        charset = characterSets.sets[self.script]['Basic']
+        for c in characterSets.sets[self.script]['DeepComponentKeys']:
+            if c in charset: continue
+            charset += c
+        return [dict(char = c, sel = files.unicodeName(c) in userLocker.glyphs[self.step]) for c in charset]
         # if not self.user+"\n" in [e._toDict['user'] for e in self.c.parent.RCJKI.collab.lockers]:
         #     userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         # else:
@@ -379,13 +383,25 @@ class LockerIDGroup(Group):
             basicGlyph[i]['sel'] = not basicGlyph[i]['sel']
         self.basicGlyphsList.set(basicGlyph)
     
-    def extremsGlyphs(self, char):
-        extrems = ""
+    def getExtremsGlyphs(self, char):
+        if char not in self.extremsGlyphs:
+            extrems = ""
+            if self.script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
+                if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
+                    for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
+                        extrems += "".join(variant)
+
+            self.extremsGlyphs[char] = extrems
+            return extrems
+        else:
+            return self.extremsGlyphs[char]
+
+    def extremsListCallback(self, sender):
         if self.script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
-            if char in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script]:
-                for variant in deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][char]:
-                    extrems += "".join(variant)
-        return extrems
+            if self.selectedChar in self.extremsGlyphs:
+                self.extremsGlyphs[self.selectedChar] = sender.get()
+        self.setGlyphs(self.basicGlyphsList.get())
+                # print(deepCompoMasters_AGB1_FULL.deepCompoMasters[self.script][self.selectedChar])
 
     def searchGlyphCallback(self, sender):
         char = sender.get()
@@ -400,18 +416,19 @@ class LockerIDGroup(Group):
         #         self.basicGlyphsList.setSelection([i])
         #         break
 
-    def extremsListCallback(self, sender):
-        pass
 
     # @antiRecursive
     def basicGlyphsListEditCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
+        self.setGlyphs(sender.get())
+
+    def setGlyphs(self, glyphsList):
         glyphs = {}
-        for k in sender.get():
+        for k in glyphsList:
             if not k["sel"]: continue
             char = k["char"]
-            glyphs[files.unicodeName(char)] = [files.unicodeName(c) for c in self.extremsGlyphs(char)]
+            glyphs[files.unicodeName(char)] = [files.unicodeName(c) for c in self.getExtremsGlyphs(char)]
 
         userLocker = self.c.parent.RCJKI.collab._addLocker(self.user, self.step)
         
@@ -431,7 +448,7 @@ class LockerIDGroup(Group):
             return 
         self.selectedChar = sender.get()[sel[0]]["char"]
         
-        self.extremsList.set(self.extremsGlyphs(self.selectedChar))
+        self.extremsList.set(self.getExtremsGlyphs(self.selectedChar))
         # deepCompoMasters_AGB1_FULL
 
 
@@ -523,7 +540,11 @@ class LockerDGroup(Group):
             drawFocusRing = False,
             showColumnTitles = False
             )
-        self.getSelectedItems = Button((10, -40, 280, 20),
+        self.deselectItems = Button((10, -40, 90, 20),
+            "Deselect",
+            sizeStyle = 'small',
+            callback= self.deselectItemsCallback)
+        self.getSelectedItems = Button((100, -40, 280, 20),
             "Get Selected Items",
             sizeStyle = 'small',
             callback = self.getSelectedItemsCallback
@@ -545,6 +566,15 @@ class LockerDGroup(Group):
         basicGlyph = self.basicGlyphs
         for i in sel:
             basicGlyph[i]['sel'] = not basicGlyph[i]['sel']
+        self.basicGlyphsList.set(basicGlyph)
+
+    def deselectItemsCallback(self, sender):
+        basicGlyphList = self.basicGlyphsList
+        sel = basicGlyphList.getSelection()
+        if not sel: return
+        basicGlyph = self.basicGlyphs
+        for i in sel:
+            basicGlyph[i]['sel'] = 0
         self.basicGlyphsList.set(basicGlyph)
 
     def searchGlyphCallback(self, sender):
@@ -587,7 +617,7 @@ class LockerDGroup(Group):
             return 
         self.selectedChar = sender.get()[sel[0]]["char"]
         
-        # self.extremsList.set(self.extremsGlyphs(self.selectedChar))
+        # self.extremsList.set(self.getExtremsGlyphs(self.selectedChar))
         # deepCompoMasters_AGB1_FULL
 
     def setScript(self):

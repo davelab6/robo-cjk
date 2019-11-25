@@ -49,6 +49,9 @@ class InitialDesignController(object):
     def setCharacterSet(self):
         self.basicCharacterSet = "".join([self.RCJKI.characterSets[key]['Basic'] for key in self.RCJKI.project.script])
         toAdd = []
+
+                    # toAdd.extend(list(v))
+        # print(self.RCJKI.project.usersLockers)
         for script in self.RCJKI.project.script:
             if script in deepCompoMasters_AGB1_FULL.deepCompoMasters:
                 for keys2extrems in [deepCompoMasters_AGB1_FULL.deepCompoMasters[script]]:
@@ -58,6 +61,18 @@ class InitialDesignController(object):
                         for variants in extrems:
                             for variant in variants:
                                 toAdd.append(variant)
+
+        for locker in self.RCJKI.project.usersLockers["lockers"]:
+            if locker['user'] == self.RCJKI.user:
+                glyphs = locker['glyphs']["_initialDesign_glyphs"]
+                for e in list(glyphs.keys()):
+                    if e not in toAdd and e not in self.basicCharacterSet :
+                        toAdd.append(chr(int(e[3:],16)))
+                # toAdd.extend(list(glyphs.keys()))
+                for v in glyphs.values():
+                    for e in v:
+                        if e not in toAdd and e not in self.basicCharacterSet :
+                            toAdd.append(chr(int(e[3:],16)))
                             
         self.characterSet = self.basicCharacterSet
         self.characterSet += "".join([c for c in files.unique(toAdd) if c not in self.characterSet])
@@ -86,6 +101,7 @@ class InitialDesignController(object):
                 glyph0rder = []
                 for c in self.characterSet:
                     glyphName = files.unicodeName(c)
+                    if glyphName in glyph0rder: continue
                     glyph0rder.append(glyphName)
                 f.glyphOrder = glyph0rder
                 f.save()
