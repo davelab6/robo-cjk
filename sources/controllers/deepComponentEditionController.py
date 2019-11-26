@@ -92,7 +92,9 @@ class DeepComponentEditionController(object):
         _, code, index = selectedDCGlyphName.split('_')
         script = self.RCJKI.collab._userLocker(self.RCJKI.user).script
         l = ["None"]
-        l.extend(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][chr(int(code,16))][int(index)])
+        # l.extend(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][chr(int(code,16))][int(index)])
+        ext = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs['_deepComponentsEdition_glyphs']["uni"+code]
+        l.extend([chr(int(e[3:],16)) for e in ext])
         self.interface.w.extremsList.setItems(l)
 
     def setExtremDCGlyph(self, char):
