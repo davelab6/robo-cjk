@@ -213,7 +213,17 @@ class DeepComponentInstantiationController(object):
         PostBannerNotification("Fonts saved", "")
 
     def pushDCMasters(self):
-        return
+        # return
+        # print(self.RCJKI.currentGlyph.lib['DeepComponentsInfos'], '\n')
+        lockedGlyphsList = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs['_deepComponentsInstantiation_glyphs']
+        DeepCompoNames = set()
+        for name in lockedGlyphsList:
+            glyph = self.RCJKI.currentFont[name]
+            DeepCompoInfos = self.RCJKI.currentFont[name].lib.get("DeepComponentsInfos", [])
+            for e in DeepCompoInfos:
+                DeepCompoNames.add(e["DeepComponentName"])
+        print(DeepCompoNames)
+
         # rootfolder = os.path.split(self.RCJKI.projectFileLocalPath)[0]
         # gitEngine = git.GitEngine(rootfolder)
         # gitEngine.pull()

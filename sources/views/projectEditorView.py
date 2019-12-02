@@ -418,7 +418,7 @@ class LockerIDGroup(Group):
             return []
         userLocker = [e for e in self.c.parent.RCJKI.collab.lockers if e._toDict['user'] == self.user][0]
         charset = characterSets.sets[self.script]['Basic']
-        for c in characterSets.sets[self.script]['DeepComponentKeys']:
+        for c in characterSets.sets[self.script].get('DeepComponentKeys', []):
             if c in charset: continue
             charset += c
         return [dict(char = c, sel = files.unicodeName(c) in userLocker.glyphs[self.step]) for c in charset]

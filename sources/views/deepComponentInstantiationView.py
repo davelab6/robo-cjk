@@ -236,27 +236,14 @@ class DeepComponentInstantiationWindow(BaseWindowController):
             "add",
             callback = self.addDCInstanceCallback)
 
-        # self.w.addNLIButton = Button((-300, -20, 100, 20),
-        #     'NLI',
-        #     callback = self.addNLIButtonCallback)
-        # self.w.addLayerButton = Button((-200, -20, 100, 20), 
-        #     "+",
-        #     callback = self.addLayerButtonCallback)
-        # self.w.removeLayerButton = Button((-100, -20, 100, 20), 
-        #     "-",
-        #     callback = self.removeLayerButtonCallback)
-
         # self.w.colorPicker = ColorWell((200,-260,20,20),
         #         callback=self.colorPickerCallback, 
         #         color=NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 0))
-
-        
 
         # self.dummyCell = NSCell.alloc().init()
         # self.dummyCell.setImage_(None)
 
         # self.observer()
-
 
         self.w.bind('close', self.windowCloses)
         # self.w.bind('became main', self.windowBecameMain)
