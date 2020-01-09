@@ -338,18 +338,24 @@ class LockerDCEGroup(Group):
 
     def searchGlyphCallback(self, sender):
         char = sender.get()
-        if len(char) > 1: return
         glyphsList = self.deepComponentKeys
-        for i, c in enumerate(glyphsList):
-            if c["char"] == char:
-                self.keyList.setSelection([i])
-                break
+        index = [i for i, c in enumerate(glyphsList) if c["char"] in char]
+        self.keyList.setSelection(index)
+
+
+        # char = sender.get()
+        # if len(char) > 1: return
+        # glyphsList = self.deepComponentKeys
+        # for i, c in enumerate(glyphsList):
+        #     if c["char"] == char:
+        #         self.keyList.setSelection([i])
+        #         break
 
     def getSelectedItemsCallback(self, sender):
         basicGlyphList = self.keyList
         sel = basicGlyphList.getSelection()
         if not sel: return
-        basicGlyph = self.deepComponentKeys
+        basicGlyph = copy.deepcopy(self.deepComponentKeys)
         for i in sel:
             basicGlyph[i]['sel'] = 1
         self.keyList.set(basicGlyph)
