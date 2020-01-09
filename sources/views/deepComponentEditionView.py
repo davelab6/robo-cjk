@@ -165,7 +165,7 @@ class DeepComponentEditionWindow(BaseWindowController):
                                     
                                     {"title": "Values", "cell": slider, "width": 410},
                                     {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
-                                    {"title": "NLI", "cell": PopUpButtonListCell(["NLI", "Reset NLI", "Update NLI"]), "binding": "selectedValue", "width": 100}
+                                    {"title": "Axis", "cell": PopUpButtonListCell([" ", "Main Axis", "Sub Axis"]), "binding": "selectedValue", "width": 100}
                                     # {"title": "Lock", "cell": checkbox, "width": 20},
                                    # {"title": "YValue", "cell": slider, "width": 250},
                                     
@@ -256,7 +256,7 @@ class DeepComponentEditionWindow(BaseWindowController):
             self.slidersValuesList.append({'Layer': newGlyphLayer.name,
                                         'Image': None,
                                         'Values': 0,
-                                        'NLI': 'NLI',
+                                        'Axis': ' ',
                                         # 'YValue': 0
                                         })
         else:
@@ -314,7 +314,7 @@ class DeepComponentEditionWindow(BaseWindowController):
             d = {'Layer': layerName,
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': item["Values"],
-                'NLI': 'NLI'
+                'Axis': item['Axis']
                 # 'Lock': item["Lock"]
                 }
 
@@ -325,17 +325,18 @@ class DeepComponentEditionWindow(BaseWindowController):
     def setSliderList(self):
         self.RCJKI.layersInfos = {}
         self.slidersValuesList = []
-        layers = [l.name for l in list(filter(lambda l: len(self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(l.name)), self.RCJKI.currentFont.layers))]
-        for layerName in layers:
+        layers = [(l.name, l) for l in list(filter(lambda l: len(self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(l.name)), self.RCJKI.currentFont.layers))]
+        for l in layers:
+            layerName, layer = l
             if layerName == "foreground": continue
             g = self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(layerName)
             emDimensions = self.RCJKI.project.settings['designFrame']['em_Dimension']
             pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
-
+            print(layer.lib.keys())
             d = {'Layer': layerName,
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': 0,
-                'NLI': 'NLI'
+                'Axis': self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].lib.get("Axis", " ")
                 # 'Lock': 1
                 }
 
@@ -355,6 +356,14 @@ class DeepComponentEditionWindow(BaseWindowController):
         image = layerInfo["Image"]
         # lock = layerInfo["Lock"]
         value = layerInfo["Values"]
+
+        axis = layerInfo.get("Axis", " ")
+
+        print(axis)
+        layer = self.RCJKI.currentFont.getLayer(selectedLayerName)[self.RCJKI.currentGlyph.name]
+        layer.lib['Axis'] = axis
+        layer.update()
+        print('\t', layer.lib.keys())
         # YValue = layerInfo["YValue"]
 
         # changed = False
@@ -386,7 +395,7 @@ class DeepComponentEditionWindow(BaseWindowController):
         # sender.set(layers)
         # sender.setSelection(sel)
 
-        layerInfo["NLI"] = "NLI"
+        # layerInfo["NLI"] = "NLI"
         self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
         self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
         self.w.mainCanvas.update()
