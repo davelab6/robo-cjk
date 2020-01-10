@@ -165,7 +165,7 @@ class DeepComponentEditionWindow(BaseWindowController):
                                     
                                     {"title": "Values", "cell": slider, "width": 410},
                                     {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
-                                    {"title": "Axis", "cell": PopUpButtonListCell([" ", "Main Axis", "Sub Axis"]), "binding": "selectedValue", "width": 100}
+                                    {"title": "Axis", "cell": PopUpButtonListCell(["Proportion Axis", "Control Axis", "Localisation Axis"]), "binding": "selectedValue", "width": 100}
                                     # {"title": "Lock", "cell": checkbox, "width": 20},
                                    # {"title": "YValue", "cell": slider, "width": 250},
                                     
