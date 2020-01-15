@@ -22,7 +22,10 @@ def refreshMainCanvas(func):
     def wrapper(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
-            self.w.mainCanvas.update()
+            if hasattr(self.w, "mainCanvas"):
+                self.w.mainCanvas.update()
+            else:
+                self.canvasGroup.mainCanvas.update()
         except Exception as e:
             raise e
     return wrapper

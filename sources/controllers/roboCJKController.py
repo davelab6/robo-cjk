@@ -334,7 +334,7 @@ class RoboCJKController(object):
             self.initialDesignController.interface.w.mainCanvas.update()
         if self.deepComponentEditionController.interface:
             self.deepComponentGlyph = self.getDeepComponentGlyph()
-            self.deepComponentEditionController.interface.w.mainCanvas.update()
+            self.deepComponentEditionController.interface.canvasGroup.mainCanvas.update()
         # if self.textCenterController.interface:
         #     self.textCenterController.interface.w.canvas.update()
 

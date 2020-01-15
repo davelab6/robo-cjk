@@ -138,14 +138,14 @@ def deepolation(newGlyph,
 
                 pI = layerGlyph[contourIndex].points[pointIndex]
 
-                if 'NLIPoints' in layerGlyph.lib: # interpolation along a cubic Bezier
-                    offPts = layerGlyph.lib['NLIPoints'][contourIndex][pointIndex]
-                    nli = getCubicPoint(ratio, (px,py), offPts[0], offPts[1], (pI.x,pI.y))
-                    deltaX += nli[0] - px
-                    deltaY += nli[1] - py
-                else: # linear interpolation
-                    deltaX += ratio * (px - pI.x)
-                    deltaY += ratio * (py - pI.y)
+                # if 'NLIPoints' in layerGlyph.lib: # interpolation along a cubic Bezier
+                #     offPts = layerGlyph.lib['NLIPoints'][contourIndex][pointIndex]
+                #     nli = getCubicPoint(ratio, (px,py), offPts[0], offPts[1], (pI.x,pI.y))
+                #     deltaX += nli[0] - px
+                #     deltaY += nli[1] - py
+                # else: # linear interpolation
+                deltaX += ratio * (pI.x - px)
+                deltaY += ratio * (pI.y - py)
 
             newX = int(px + deltaX)
             newY = int(py + deltaY)

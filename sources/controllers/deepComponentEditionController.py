@@ -95,7 +95,7 @@ class DeepComponentEditionController(object):
         # l.extend(deepCompoMasters_AGB1_FULL.deepCompoMasters[script][chr(int(code,16))][int(index)])
         ext = self.RCJKI.collab._userLocker(self.RCJKI.user).glyphs['_deepComponentsEdition_glyphs'].get("uni"+code, [])
         l.extend([chr(int(e[3:],16)) for e in ext])
-        self.interface.w.extremsList.setItems(l)
+        self.interface.canvasGroup.extremsList.setItems(l)
 
     def setExtremDCGlyph(self, char):
         if char == "None":
@@ -108,7 +108,7 @@ class DeepComponentEditionController(object):
                 self.interface.canvasDrawer.extremDCGlyph = None
         else:
             self.interface.canvasDrawer.extremDCGlyph = None
-        self.interface.w.mainCanvas.update()
+        self.interface.canvasGroup.mainCanvas.update()
 
 
     def saveSubsetFonts(self):
@@ -259,42 +259,43 @@ class DeepComponentEditionController(object):
             self.interface.w.fontsList.set(self.fontsList)
 
     def makeNLIPaths(self, reset=False):
-        g = self.RCJKI.currentGlyph
-        if not g: return
-        if g.name in self.RCJKI.pathsGlyphs and reset == False: return
-        # pathsGlyphs = {}
-        start = g.getLayer('foreground')
-        for end in g.layers:
-            endName = end.layerName
-            if endName == 'foreground': continue
-            if len(end) == 0: continue
+        return
+        # g = self.RCJKI.currentGlyph
+        # if not g: return
+        # if g.name in self.RCJKI.pathsGlyphs and reset == False: return
+        # # pathsGlyphs = {}
+        # start = g.getLayer('foreground')
+        # for end in g.layers:
+        #     endName = end.layerName
+        #     if endName == 'foreground': continue
+        #     if len(end) == 0: continue
 
-            # pathGlyph = RGlyph()
-            # pathGlyph.name = 'paths_%s' % endName
+        #     # pathGlyph = RGlyph()
+        #     # pathGlyph.name = 'paths_%s' % endName
             
-            # pen = pathGlyph.getPen()
+        #     # pen = pathGlyph.getPen()
 
-            if reset or "NLIPoints" not in end.lib:
-                offList = []
+        #     if reset or "NLIPoints" not in end.lib:
+        #         offList = []
 
-                for cs, ce in zip(start, end):
-                    of = []
-                    for j, p in enumerate(cs.points):
-                        # pen.moveTo((p.x, p.y))
-                        pe = ce.points[j]
-                        # pen.curveTo( (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3),  (pe.x, pe.y) )
-                        # pen.endPath()
+        #         for cs, ce in zip(start, end):
+        #             of = []
+        #             for j, p in enumerate(cs.points):
+        #                 # pen.moveTo((p.x, p.y))
+        #                 pe = ce.points[j]
+        #                 # pen.curveTo( (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3),  (pe.x, pe.y) )
+        #                 # pen.endPath()
 
-                        of.append([
-                            (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), 
-                            (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3)
-                            ])
-                    offList.append(of)
-                # pathsGlyphs[pathGlyph.name] = pathGlyph
+        #                 of.append([
+        #                     (p.x+(pe.x-p.x)/3 , p.y+(pe.y-p.y)/3), 
+        #                     (p.x+2*(pe.x-p.x)/3 , p.y+2*(pe.y-p.y)/3)
+        #                     ])
+        #             offList.append(of)
+        #         # pathsGlyphs[pathGlyph.name] = pathGlyph
 
-                end.lib["NLIPoints"] = offList
-            # print(end.lib["NLIPoints"])
+        #         end.lib["NLIPoints"] = offList
+        #     # print(end.lib["NLIPoints"])
 
-        # self.RCJKI.pathsGlyphs[g.name] = pathsGlyphs
-        # print(self.RCJKI.pathsGlyphs)
+        # # self.RCJKI.pathsGlyphs[g.name] = pathsGlyphs
+        # # print(self.RCJKI.pathsGlyphs)
 

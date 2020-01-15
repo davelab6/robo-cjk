@@ -51,6 +51,243 @@ from utils import decorators
 reload(decorators)
 refreshMainCanvas = decorators.refreshMainCanvas
 
+class CanvasGroup(Group):
+
+    def __init__(self, posSize, RCJKI, controller):
+        super(CanvasGroup, self).__init__(posSize)
+        self.RCJKI = RCJKI
+        self.c = controller
+
+        
+        self.mainCanvas = Canvas((0,0,-0,-0), 
+            delegate=self.c.canvasDrawer,
+            canvasSize=(5000, 5000),
+            hasHorizontalScroller=False, 
+            hasVerticalScroller=False)
+
+        self.extremsList = PopUpButton((0, 0, 200, 20), 
+            [], 
+            sizeStyle = 'small',
+            callback = self.extremsListCallback)
+
+        self.dcOffsetXTextBox = TextBox((35, -20, 15, 20), "x:", sizeStyle = 'small')
+        self.dcOffsetYTextBox = TextBox((85, -20, 15, 20), "y:", sizeStyle = 'small')
+
+
+        self.dcOffsetXEditText = EditText((50, -20, 50, 20), 
+            self.c.deepComponentTranslateX,
+            sizeStyle = "small",
+            callback = self.dcOffsetXEditTextCallback,
+            continuous = False)
+
+        self.dcOffsetXEditText.getNSTextField().setBordered_(False)
+        self.dcOffsetXEditText.getNSTextField().setDrawsBackground_(False)
+
+        
+        self.dcOffsetYEditText = EditText((100, -20, 50, 20), 
+            self.c.deepComponentTranslateY,
+            sizeStyle = "small",
+            callback = self.dcOffsetYEditTextCallback,
+            continuous = False)
+
+        self.dcOffsetYEditText.getNSTextField().setBordered_(False)
+        self.dcOffsetYEditText.getNSTextField().setDrawsBackground_(False)
+
+        self.colorPicker = ColorWell((0,-20,20,20),
+                callback=self.colorPickerCallback, 
+                color=NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 0))
+
+
+    def extremsListCallback(self, sender):
+        char = sender.getItem()
+        self.c.controller.setExtremDCGlyph(char)
+
+    @refreshMainCanvas
+    def dcOffsetXEditTextCallback(self, sender):
+        try:
+            self.c.deepComponentTranslateX = int(sender.get())
+        except:
+            sender.set(self.c.deepComponentTranslateX)
+
+    @refreshMainCanvas
+    def dcOffsetYEditTextCallback(self, sender):
+        try:
+            self.c.deepComponentTranslateY = int(sender.get())
+        except:
+            sender.set(self.c.deepComponentTranslateY)
+
+    def colorPickerCallback(self, sender):
+        if self.RCJKI.currentGlyph is None: return
+        color = sender.get()
+        r = color.redComponent()
+        g = color.greenComponent()
+        b = color.blueComponent()
+        a = color.alphaComponent()
+    
+        self.RCJKI.currentGlyph.markColor = (r, g, b, a)
+        self.c.controller.updateGlyphSetList()
+
+class SliderGroup(Group):
+
+    def __init__(self, posSize, RCJKI, controller, axis):
+        super(SliderGroup, self).__init__(posSize)
+        self.axis = axis
+        self.RCJKI = RCJKI
+        self.c = controller
+        self.lock = False
+
+        slider = SliderListCell(minValue = 0, maxValue = 1000)
+        self.slidersValuesList = []
+        self.slidersList = List((0, 0, -0, -20),
+            self.slidersValuesList,
+            columnDescriptions = [
+                                    {"title": "Layer", "editable": False, "width": 0},
+                                    
+                                    {"title": "Values", "cell": slider, "width": 410},
+                                    {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 160}, 
+                                    # {"title": "Axis", "cell": PopUpButtonListCell(["Proportion Axis", "Control Axis", "Localisation Axis"]), "binding": "selectedValue", "width": 100}
+                                    # {"title": "Lock", "cell": checkbox, "width": 20},
+                                   # {"title": "YValue", "cell": slider, "width": 250},
+                                    
+                                    ],
+            editCallback = self.slidersListEditCallback,
+            doubleClickCallback = self.sliderListDoubleClickCallback,
+            drawFocusRing = False,
+            allowsMultipleSelection = False,
+            rowHeight = 145.0,
+            showColumnTitles = False
+            )
+
+        # self.addNLIButton = Button((-300, -20, 100, 20),
+        #     'NLI',
+        #     # callback = self.addNLIButtonCallback
+        #     )
+        self.addLayerButton = Button((-200, -20, 100, 20), 
+            "+",
+            callback = self.addLayerButtonCallback
+            )
+        self.removeLayerButton = Button((-100, -20, 100, 20), 
+            "-",
+            callback = self.removeLayerButtonCallback
+            )
+
+    def slidersListEditCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        if self.lock: return
+        self.lock = True
+        layersInfo = sender.get()
+        layerInfo = layersInfo[sel[0]]
+
+        selectedLayerName = layerInfo["Layer"]
+        image = layerInfo["Image"]
+        # lock = layerInfo["Lock"]
+        value = layerInfo["Values"]
+
+        axis = layerInfo.get("Axis", " ")
+
+        # print(axis)
+        layer = self.RCJKI.currentFont.getLayer(selectedLayerName)[self.RCJKI.currentGlyph.name]
+        print(layer.lib["Axis"])
+        # print(axis)
+        # layer.lib['Axis'] = self.axis
+        # layer.update()
+        # print('\t', layer.lib.keys())
+        # YValue = layerInfo["YValue"]
+
+        # changed = False
+        # # if lock:
+        #     if Value != self.slidersValuesList[sel[0]]["Value"]:
+        #         YValue = XValue
+        #         changed = True
+
+        #     elif YValue != self.slidersValuesList[sel[0]]["YValue"]:
+        #         XValue = YValue
+        #         changed = True
+
+        # if lock != self.slidersValuesList[sel[0]]["Lock"]:
+            # changed = True 
+
+
+        self.RCJKI.layersInfos[selectedLayerName] = value
+        self.slidersValuesList[sel[0]]["Values"] = value
+        # self.slidersValuesList[sel[0]]["YValue"] = YValue 
+        # self.slidersValuesList[sel[0]]["Lock"] = lock
+
+        #if changed:
+        # d = {'Layer': selectedLayerName,
+        #     'Image': image,
+        #     'Values': value
+        #     # 'YValue': YValue,
+        #     # 'Lock': lock
+        #     }
+        # layers = [e if i != sel[0] else d for i, e in enumerate(layersInfo)]
+        # sender.set(layers)
+        # sender.setSelection(sel)
+
+        # layerInfo["NLI"] = "NLI"
+        self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.c.selectedDeepComponentGlyphName]
+        self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
+        self.c.canvasGroup.mainCanvas.update()
+        self.lock = False
+
+    def sliderListDoubleClickCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        layerName = sender.get()[sel[0]]['Layer']
+        self.RCJKI.currentGlyph = self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name]
+        self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
+
+
+    # @refreshMainCanvas
+    def addLayerButtonCallback(self, sender):
+        g = self.RCJKI.currentGlyph
+        f = self.RCJKI.currentFont
+        if len(f.getLayer("foreground")[g.name]):
+            newGlyphLayer = list(filter(lambda l: not len(g.getLayer(l.name)), f.layers))[0]
+            f.getLayer(newGlyphLayer.name).insertGlyph(g.getLayer("foreground"))
+            self.RCJKI.currentGlyph = f.getLayer(newGlyphLayer.name)[g.name]
+            self.slidersValuesList.append({'Layer': newGlyphLayer.name,
+                                        'Image': None,
+                                        'Values': 0,
+                                        # 'Axis': ' ',
+                                        # 'YValue': 0
+                                        })
+            self.RCJKI.currentGlyph.lib["Axis"] = self.axis
+            print(self.RCJKI.currentGlyph.lib["Axis"])
+            self.RCJKI.currentGlyph.update()
+        else:
+
+            self.RCJKI.currentGlyph = f.getLayer("foreground")[g.name]
+            if self.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
+                self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
+
+        self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
+        self.c.setSliderList()
+        self.c.updateImageSliderList()
+        self.c.canvasGroup.mainCanvas.update()
+        # self.RCJKI.updateViews()
+        # self.setSliderList()
+
+    # @refreshMainCanvas
+    def removeLayerButtonCallback(self, sender):
+        sel = self.slidersList.getSelection()
+        if not sel:
+            PostBannerNotification("Error", "No selected layer")
+            return
+
+        layerName = self.slidersValuesList[sel[0]]['Layer']
+        self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].clear()
+
+        self.slidersValuesList.pop(sel[0])
+        del self.RCJKI.layersInfos[layerName]
+
+        self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
+
+        self.slidersList.set(self.slidersValuesList)
+        self.c.canvasGroup.mainCanvas.update()
+
+
 class DeepComponentEditionWindow(BaseWindowController):
 
     def __init__(self, controller):
@@ -118,80 +355,118 @@ class DeepComponentEditionWindow(BaseWindowController):
             'Pull', 
             callback=self.pullMasterGlyphsButtonCallback)
 
-        
-
-        self.canvasDrawer = mainCanvas.MainCanvas(self.RCJKI, self)
-        self.w.mainCanvas = Canvas((200,0,-0,-240), 
-            delegate=self.canvasDrawer,
-            canvasSize=(5000, 5000),
-            hasHorizontalScroller=False, 
-            hasVerticalScroller=False)
-
-        self.w.extremsList = PopUpButton((200, 0, 200, 20), 
-            [], 
-            sizeStyle = 'small',
-            callback = self.extremsListCallback)
-
-        self.w.dcOffsetXTextBox = TextBox((235, -260, 15, 20), "x:", sizeStyle = 'small')
-        self.w.dcOffsetYTextBox = TextBox((285, -260, 15, 20), "y:", sizeStyle = 'small')
 
         self.deepComponentTranslateX = 0
-        self.w.dcOffsetXEditText = EditText((250, -260, 50, 20), 
-            self.deepComponentTranslateX,
-            sizeStyle = "small",
-            callback = self.dcOffsetXEditTextCallback,
-            continuous = False)
-
-        self.w.dcOffsetXEditText.getNSTextField().setBordered_(False)
-        self.w.dcOffsetXEditText.getNSTextField().setDrawsBackground_(False)
-
         self.deepComponentTranslateY = 0
-        self.w.dcOffsetYEditText = EditText((300, -260, 50, 20), 
-            self.deepComponentTranslateY,
-            sizeStyle = "small",
-            callback = self.dcOffsetYEditTextCallback,
-            continuous = False)
 
-        self.w.dcOffsetYEditText.getNSTextField().setBordered_(False)
-        self.w.dcOffsetYEditText.getNSTextField().setDrawsBackground_(False)
+        self.canvasDrawer = mainCanvas.MainCanvas(self.RCJKI, self)
+        
+        self.canvasGroup = CanvasGroup((0, 0,-0,-0), self.RCJKI, self)
 
-        slider = SliderListCell(minValue = 0, maxValue = 1000)
+        # self.canvasDrawer = mainCanvas.MainCanvas(self.RCJKI, self)
+        # self.canvasGroup.mainCanvas = Canvas((0,0,-0,-0), 
+        #     delegate=self.canvasDrawer,
+        #     canvasSize=(5000, 5000),
+        #     hasHorizontalScroller=False, 
+        #     hasVerticalScroller=False)
+
+        # self.canvasGroup.extremsList = PopUpButton((0, 0, 200, 20), 
+        #     [], 
+        #     sizeStyle = 'small',
+        #     callback = self.extremsListCallback)
+
+        # self.canvasGroup.dcOffsetXTextBox = TextBox((35, -20, 15, 20), "x:", sizeStyle = 'small')
+        # self.canvasGroup.dcOffsetYTextBox = TextBox((85, -20, 15, 20), "y:", sizeStyle = 'small')
+
+
+        # self.canvasGroup.dcOffsetXEditText = EditText((50, -20, 50, 20), 
+        #     self.deepComponentTranslateX,
+        #     sizeStyle = "small",
+        #     callback = self.dcOffsetXEditTextCallback,
+        #     continuous = False)
+
+        # self.canvasGroup.dcOffsetXEditText.getNSTextField().setBordered_(False)
+        # self.canvasGroup.dcOffsetXEditText.getNSTextField().setDrawsBackground_(False)
+
+        
+        # self.canvasGroup.dcOffsetYEditText = EditText((100, -20, 50, 20), 
+        #     self.deepComponentTranslateY,
+        #     sizeStyle = "small",
+        #     callback = self.dcOffsetYEditTextCallback,
+        #     continuous = False)
+
+        # self.canvasGroup.dcOffsetYEditText.getNSTextField().setBordered_(False)
+        # self.canvasGroup.dcOffsetYEditText.getNSTextField().setDrawsBackground_(False)
+
+        # slider = SliderListCell(minValue = 0, maxValue = 1000)
         # checkbox = CheckBoxListCell()
-        self.slidersValuesList = []
-        self.w.slidersList = List((200, -240, -0, -20),
-            self.slidersValuesList,
-            columnDescriptions = [
-                                    {"title": "Layer", "editable": False, "width": 0},
-                                    
-                                    {"title": "Values", "cell": slider, "width": 410},
-                                    {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
-                                    {"title": "Axis", "cell": PopUpButtonListCell(["Proportion Axis", "Control Axis", "Localisation Axis"]), "binding": "selectedValue", "width": 100}
-                                    # {"title": "Lock", "cell": checkbox, "width": 20},
-                                   # {"title": "YValue", "cell": slider, "width": 250},
-                                    
-                                    ],
-            editCallback = self.slidersListEditCallback,
-            doubleClickCallback = self.sliderListDoubleClickCallback,
-            drawFocusRing = False,
-            allowsMultipleSelection = False,
-            rowHeight = 50.0,
-            showColumnTitles = False
+
+
+        self.slidersGroup = Group((0, 0, -0, -0))
+        self.slidersSegmentedButtonsItems = [
+                            "Proportion Axis",
+                            "Control Axis",
+                            "Localisation Axis",
+                            ]
+        self.slidersGroup.segmentedButton = SegmentedButton((0, 0, -0, 20),
+            [dict(title=e, width=600/len(self.slidersSegmentedButtonsItems)) for e in self.slidersSegmentedButtonsItems],
+            callback = self.sliderGroupSegmentedButtonCallback
             )
+        self.slidersGroup.segmentedButton.set(0)
 
-        self.w.addNLIButton = Button((-300, -20, 100, 20),
-            'NLI',
-            callback = self.addNLIButtonCallback)
-        self.w.addLayerButton = Button((-200, -20, 100, 20), 
-            "+",
-            callback = self.addLayerButtonCallback)
-        self.w.removeLayerButton = Button((-100, -20, 100, 20), 
-            "-",
-            callback = self.removeLayerButtonCallback)
+        for index, item in enumerate(self.slidersSegmentedButtonsItems):
+            name = item.split(" ")[0]
+            sliderGroup = SliderGroup((0, 20, -0, -0), self.RCJKI, self, item)
+            setattr(self.slidersGroup, name, sliderGroup)
+            getattr(self.slidersGroup, name).show(index == 0)
+            if not index:
+                self.enableSliderGroup = sliderGroup
 
-        self.w.colorPicker = ColorWell((200,-260,20,20),
-                callback=self.colorPickerCallback, 
-                color=NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 0))
+        # self.slidersValuesList = []
+        # self.slidersGroup.proportion.slidersList = List((0, 0, -0, -20),
+        #     self.slidersValuesList,
+        #     columnDescriptions = [
+        #                             {"title": "Layer", "editable": False, "width": 0},
+                                    
+        #                             {"title": "Values", "cell": slider, "width": 410},
+        #                             {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 60}, 
+        #                             {"title": "Axis", "cell": PopUpButtonListCell(["Proportion Axis", "Control Axis", "Localisation Axis"]), "binding": "selectedValue", "width": 100}
+        #                             # {"title": "Lock", "cell": checkbox, "width": 20},
+        #                            # {"title": "YValue", "cell": slider, "width": 250},
+                                    
+        #                             ],
+        #     editCallback = self.slidersListEditCallback,
+        #     doubleClickCallback = self.sliderListDoubleClickCallback,
+        #     drawFocusRing = False,
+        #     allowsMultipleSelection = False,
+        #     rowHeight = 50.0,
+        #     showColumnTitles = False
+        #     )
 
+        # self.slidersGroup.proportion.addNLIButton = Button((-300, -20, 100, 20),
+        #     'NLI',
+        #     callback = self.addNLIButtonCallback)
+        # self.slidersGroup.proportion.addLayerButton = Button((-200, -20, 100, 20), 
+        #     "+",
+        #     callback = self.addLayerButtonCallback)
+        # self.slidersGroup.proportion.removeLayerButton = Button((-100, -20, 100, 20), 
+        #     "-",
+        #     callback = self.removeLayerButtonCallback)
+
+        # self.canvasGroup.colorPicker = ColorWell((200,-260,20,20),
+        #         callback=self.colorPickerCallback, 
+        #         color=NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 0))
+
+
+        paneDescriptors = [
+            dict(view=self.canvasGroup, identifier="pane1"),
+            dict(view=self.slidersGroup, identifier="pane2", size=240),
+        ]
+        self.w.splitView = SplitView((200, 0, -0, -0), 
+                            paneDescriptors,
+                            isVertical = False,
+                            dividerStyle = "thin",
+                            )
         
 
         self.dummyCell = NSCell.alloc().init()
@@ -226,66 +501,66 @@ class DeepComponentEditionWindow(BaseWindowController):
         glyph.update()
 
     def UpdateDCOffset(self):
-        self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
-        self.w.dcOffsetYEditText.set(self.deepComponentTranslateY)
+        self.canvasGroup.dcOffsetXEditText.set(self.deepComponentTranslateX)
+        self.canvasGroup.dcOffsetYEditText.set(self.deepComponentTranslateY)
 
-    @refreshMainCanvas
-    def dcOffsetXEditTextCallback(self, sender):
-        try:
-            self.deepComponentTranslateX = int(sender.get())
-        except:
-            sender.set(self.deepComponentTranslateX)
+    # @refreshMainCanvas
+    # def dcOffsetXEditTextCallback(self, sender):
+    #     try:
+    #         self.deepComponentTranslateX = int(sender.get())
+    #     except:
+    #         sender.set(self.deepComponentTranslateX)
 
-    @refreshMainCanvas
-    def dcOffsetYEditTextCallback(self, sender):
-        try:
-            self.deepComponentTranslateY = int(sender.get())
-        except:
-            sender.set(self.deepComponentTranslateY)
+    # @refreshMainCanvas
+    # def dcOffsetYEditTextCallback(self, sender):
+    #     try:
+    #         self.deepComponentTranslateY = int(sender.get())
+    #     except:
+    #         sender.set(self.deepComponentTranslateY)
 
-    def addNLIButtonCallback(self, sender):
-        self.RCJKI.deepComponentEditionController.makeNLIPaths(reset=True)
+    # def addNLIButtonCallback(self, sender):
+    #     self.RCJKI.deepComponentEditionController.makeNLIPaths(reset=True)
 
-    def addLayerButtonCallback(self, sender):
-        g = self.RCJKI.currentGlyph
-        f = self.RCJKI.currentFont
-        if len(f.getLayer("foreground")[g.name]):
-            newGlyphLayer = list(filter(lambda l: not len(g.getLayer(l.name)), f.layers))[0]
-            f.getLayer(newGlyphLayer.name).insertGlyph(g.getLayer("foreground"))
-            self.RCJKI.currentGlyph = f.getLayer(newGlyphLayer.name)[g.name]
-            self.slidersValuesList.append({'Layer': newGlyphLayer.name,
-                                        'Image': None,
-                                        'Values': 0,
-                                        'Axis': ' ',
-                                        # 'YValue': 0
-                                        })
-        else:
+    # def addLayerButtonCallback(self, sender):
+    #     g = self.RCJKI.currentGlyph
+    #     f = self.RCJKI.currentFont
+    #     if len(f.getLayer("foreground")[g.name]):
+    #         newGlyphLayer = list(filter(lambda l: not len(g.getLayer(l.name)), f.layers))[0]
+    #         f.getLayer(newGlyphLayer.name).insertGlyph(g.getLayer("foreground"))
+    #         self.RCJKI.currentGlyph = f.getLayer(newGlyphLayer.name)[g.name]
+    #         self.slidersValuesList.append({'Layer': newGlyphLayer.name,
+    #                                     'Image': None,
+    #                                     'Values': 0,
+    #                                     # 'Axis': ' ',
+    #                                     # 'YValue': 0
+    #                                     })
+    #     else:
 
-            self.RCJKI.currentGlyph = f.getLayer("foreground")[g.name]
-            if self.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
-                self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
+    #         self.RCJKI.currentGlyph = f.getLayer("foreground")[g.name]
+    #         if self.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
+    #             self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
 
-        self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
-        self.updateImageSliderList()
-        self.RCJKI.updateViews()
-        # self.setSliderList()
+    #     self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
+    #     self.updateImageSliderList()
+    #     self.RCJKI.updateViews()
+    #     # self.setSliderList()
 
-    @refreshMainCanvas
-    def removeLayerButtonCallback(self, sender):
-        sel = self.w.slidersList.getSelection()
-        if not sel:
-            PostBannerNotification("Error", "No selected layer")
-            return
+    # @refreshMainCanvas
+    # def removeLayerButtonCallback(self, sender):
+    #     sel = self.slidersGroup.proportion.slidersList.getSelection()
+    #     if not sel:
+    #         PostBannerNotification("Error", "No selected layer")
+    #         return
 
-        layerName = self.slidersValuesList[sel[0]]['Layer']
-        self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].clear()
+    #     layerName = self.slidersValuesList[sel[0]]['Layer']
+    #     self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].clear()
 
-        self.slidersValuesList.pop(sel[0])
-        del self.RCJKI.layersInfos[layerName]
+    #     self.slidersValuesList.pop(sel[0])
+    #     del self.RCJKI.layersInfos[layerName]
 
-        self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
+    #     self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
 
-        self.w.slidersList.set(self.slidersValuesList)
+    #     self.slidersGroup.proportion.slidersList.set(self.slidersValuesList)
 
     @refreshMainCanvas
     def saveLocalFontButtonCallback(self, sender):
@@ -302,9 +577,21 @@ class DeepComponentEditionWindow(BaseWindowController):
     def windowBecameMain(self, sender):
         self.updateImageSliderList()
 
+    def sliderGroupSegmentedButtonCallback(self, sender):
+        i = sender.get()
+        for index, item in enumerate(self.slidersSegmentedButtonsItems):
+            name = item.split(" ")[0]
+            enable = index == i
+            group = getattr(self.slidersGroup, name)
+            group.show(enable)
+            if enable:
+                self.enableSliderGroup = group
+                self.setSliderList()
+
     def updateImageSliderList(self):
+        return
         slidersValuesList = []
-        for item in self.slidersValuesList:
+        for item in self.enableSliderGroup.slidersValuesList:
 
             layerName = item["Layer"]
             g = self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(layerName)
@@ -314,99 +601,128 @@ class DeepComponentEditionWindow(BaseWindowController):
             d = {'Layer': layerName,
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': item["Values"],
-                'Axis': item['Axis']
+                # 'Axis': item['Axis']
                 # 'Lock': item["Lock"]
                 }
 
             slidersValuesList.append(d)
-        self.slidersValuesList = slidersValuesList
-        self.w.slidersList.set(self.slidersValuesList)
+        self.enableSliderGroup.slidersValuesList = slidersValuesList
+        self.w.enableSliderGroup.slidersList.set(slidersValuesList)
 
     def setSliderList(self):
+        # self.RCJKI.layersInfos = {}
+        # self.enableSliderGroup.slidersValuesList = []
+        # layers = [(l.name, l) for l in list(filter(lambda l: len(self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(l.name)), self.RCJKI.currentFont.layers))]
+        # for l in layers:
+        #     layerName, layer = l
+        #     if layerName == "foreground": continue
+        #     g = self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(layerName)
+        #     emDimensions = self.RCJKI.project.settings['designFrame']['em_Dimension']
+        #     pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
+        #     print(layer.lib.keys())
+        #     d = {'Layer': layerName,
+        #         'Image': NSImage.alloc().initWithData_(pdfData),
+        #         'Values': 0,
+        #         'Axis': self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].lib.get("Axis", " ")
+        #         # 'Lock': 1
+        #         }
+
+        #     self.enableSliderGroup.slidersValuesList.append(d)
+        #     self.RCJKI.layersInfos[layerName] = 0
+        # self.enableSliderGroup.slidersList.set(self.enableSliderGroup.slidersValuesList)
+
+
         self.RCJKI.layersInfos = {}
-        self.slidersValuesList = []
+        enableSliderGroup = self.enableSliderGroup
+        # enableSliderName = self.enableSliderGroup.axis
+
+        self.enableSliderGroup.slidersValuesList = []
         layers = [(l.name, l) for l in list(filter(lambda l: len(self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(l.name)), self.RCJKI.currentFont.layers))]
         for l in layers:
             layerName, layer = l
             if layerName == "foreground": continue
+            axis = self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].lib.get("Axis", " ")
+            # print(axis)
+            if axis != self.enableSliderGroup.axis: continue
+            
             g = self.RCJKI.currentFont[self.RCJKI.currentGlyph.name].getLayer(layerName)
             emDimensions = self.RCJKI.project.settings['designFrame']['em_Dimension']
             pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
-            print(layer.lib.keys())
+            # print(layer.lib.keys())
             d = {'Layer': layerName,
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': 0,
-                'Axis': self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name].lib.get("Axis", " ")
+                # 'Axis': axis
                 # 'Lock': 1
                 }
 
-            self.slidersValuesList.append(d)
+            self.enableSliderGroup.slidersValuesList.append(d)
             self.RCJKI.layersInfos[layerName] = 0
-        self.w.slidersList.set(self.slidersValuesList)
+        self.enableSliderGroup.slidersList.set(self.enableSliderGroup.slidersValuesList)
 
-    def slidersListEditCallback(self, sender):
-        sel = sender.getSelection()
-        if not sel: return
-        if self.lock: return
-        self.lock = True
-        layersInfo = sender.get()
-        layerInfo = layersInfo[sel[0]]
+    # def slidersListEditCallback(self, sender):
+    #     sel = sender.getSelection()
+    #     if not sel: return
+    #     if self.lock: return
+    #     self.lock = True
+    #     layersInfo = sender.get()
+    #     layerInfo = layersInfo[sel[0]]
 
-        selectedLayerName = layerInfo["Layer"]
-        image = layerInfo["Image"]
-        # lock = layerInfo["Lock"]
-        value = layerInfo["Values"]
+    #     selectedLayerName = layerInfo["Layer"]
+    #     image = layerInfo["Image"]
+    #     # lock = layerInfo["Lock"]
+    #     value = layerInfo["Values"]
 
-        axis = layerInfo.get("Axis", " ")
+    #     axis = layerInfo.get("Axis", " ")
 
-        print(axis)
-        layer = self.RCJKI.currentFont.getLayer(selectedLayerName)[self.RCJKI.currentGlyph.name]
-        layer.lib['Axis'] = axis
-        layer.update()
-        print('\t', layer.lib.keys())
-        # YValue = layerInfo["YValue"]
+    #     print(axis)
+    #     layer = self.RCJKI.currentFont.getLayer(selectedLayerName)[self.RCJKI.currentGlyph.name]
+    #     layer.lib['Axis'] = axis
+    #     layer.update()
+    #     print('\t', layer.lib.keys())
+    #     # YValue = layerInfo["YValue"]
 
-        # changed = False
-        # # if lock:
-        #     if Value != self.slidersValuesList[sel[0]]["Value"]:
-        #         YValue = XValue
-        #         changed = True
+    #     # changed = False
+    #     # # if lock:
+    #     #     if Value != self.slidersValuesList[sel[0]]["Value"]:
+    #     #         YValue = XValue
+    #     #         changed = True
 
-        #     elif YValue != self.slidersValuesList[sel[0]]["YValue"]:
-        #         XValue = YValue
-        #         changed = True
+    #     #     elif YValue != self.slidersValuesList[sel[0]]["YValue"]:
+    #     #         XValue = YValue
+    #     #         changed = True
 
-        # if lock != self.slidersValuesList[sel[0]]["Lock"]:
-            # changed = True 
+    #     # if lock != self.slidersValuesList[sel[0]]["Lock"]:
+    #         # changed = True 
 
-        self.RCJKI.layersInfos[selectedLayerName] = value
-        self.slidersValuesList[sel[0]]["Values"] = value
-        # self.slidersValuesList[sel[0]]["YValue"] = YValue 
-        # self.slidersValuesList[sel[0]]["Lock"] = lock
+    #     self.RCJKI.layersInfos[selectedLayerName] = value
+    #     self.slidersValuesList[sel[0]]["Values"] = value
+    #     # self.slidersValuesList[sel[0]]["YValue"] = YValue 
+    #     # self.slidersValuesList[sel[0]]["Lock"] = lock
 
-        #if changed:
-        # d = {'Layer': selectedLayerName,
-        #     'Image': image,
-        #     'Values': value
-        #     # 'YValue': YValue,
-        #     # 'Lock': lock
-        #     }
-        # layers = [e if i != sel[0] else d for i, e in enumerate(layersInfo)]
-        # sender.set(layers)
-        # sender.setSelection(sel)
+    #     #if changed:
+    #     # d = {'Layer': selectedLayerName,
+    #     #     'Image': image,
+    #     #     'Values': value
+    #     #     # 'YValue': YValue,
+    #     #     # 'Lock': lock
+    #     #     }
+    #     # layers = [e if i != sel[0] else d for i, e in enumerate(layersInfo)]
+    #     # sender.set(layers)
+    #     # sender.setSelection(sel)
 
-        # layerInfo["NLI"] = "NLI"
-        self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
-        self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
-        self.w.mainCanvas.update()
-        self.lock = False
+    #     # layerInfo["NLI"] = "NLI"
+    #     self.RCJKI.currentGlyph = self.RCJKI.currentFont[self.selectedDeepComponentGlyphName]
+    #     self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
+    #     self.w.mainCanvas.update()
+    #     self.lock = False
 
-    def sliderListDoubleClickCallback(self, sender):
-        sel = sender.getSelection()
-        if not sel: return
-        layerName = sender.get()[sel[0]]['Layer']
-        self.RCJKI.currentGlyph = self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name]
-        self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
+    # def sliderListDoubleClickCallback(self, sender):
+    #     sel = sender.getSelection()
+    #     if not sel: return
+    #     layerName = sender.get()[sel[0]]['Layer']
+    #     self.RCJKI.currentGlyph = self.RCJKI.currentFont.getLayer(layerName)[self.RCJKI.currentGlyph.name]
+    #     self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
 
     def fontsListSelectionCallback(self, sender):
         sel = sender.getSelection()
@@ -426,8 +742,8 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.selectedGlyphName = sender.get()[sel[0]]['Name']
         self.controller.updateDeepComponentsSetList(self.selectedGlyphName)
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
-        self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
-        self.w.dcOffsetYEditText.set(self.deepComponentTranslateY)
+        self.canvasGroup.dcOffsetXEditText.set(self.deepComponentTranslateX)
+        self.canvasGroup.dcOffsetYEditText.set(self.deepComponentTranslateY)
 
     def glyphSetListdoubleClickCallback(self, sender):
         sel = sender.getSelection()
@@ -439,7 +755,7 @@ class DeepComponentEditionWindow(BaseWindowController):
     def deepComponentsSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
-        self.RCJKI.deepComponentEditionController.makeNLIPaths()
+        # self.RCJKI.deepComponentEditionController.makeNLIPaths()
 
         self.selectedDeepComponentGlyphName = sender.get()[sel[0]]['Name']
 
@@ -451,7 +767,7 @@ class DeepComponentEditionWindow(BaseWindowController):
                 r, g, b, a = 0, 0, 0, 0
             else: 
                 r, g, b, a = self.RCJKI.currentGlyph.markColor
-            self.w.colorPicker.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(r, g, b, a))
+            self.canvasGroup.colorPicker.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(r, g, b, a))
         else:
             self.RCJKI.currentGlyph = None
         self.setSliderList()
@@ -459,12 +775,12 @@ class DeepComponentEditionWindow(BaseWindowController):
         self.RCJKI.deepComponentGlyph = self.RCJKI.getDeepComponentGlyph()
 
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
-        self.w.dcOffsetXEditText.set(self.deepComponentTranslateX)
-        self.w.dcOffsetYEditText.set(self.deepComponentTranslateY) 
+        self.canvasGroup.dcOffsetXEditText.set(self.deepComponentTranslateX)
+        self.canvasGroup.dcOffsetYEditText.set(self.deepComponentTranslateY) 
 
-    def extremsListCallback(self, sender):
-        char = sender.getItem()
-        self.controller.setExtremDCGlyph(char)
+    # def extremsListCallback(self, sender):
+    #     char = sender.getItem()
+    #     self.controller.setExtremDCGlyph(char)
 
     def deepComponentsSetListDoubleClickCallback(self, sender):
         if not sender.getSelection(): return
@@ -474,16 +790,16 @@ class DeepComponentEditionWindow(BaseWindowController):
             self.RCJKI.currentGlyph.width = self.RCJKI.project.settings['designFrame']['em_Dimension'][0]
         self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
 
-    def colorPickerCallback(self, sender):
-        if self.RCJKI.currentGlyph is None: return
-        color = sender.get()
-        r = color.redComponent()
-        g = color.greenComponent()
-        b = color.blueComponent()
-        a = color.alphaComponent()
+    # def colorPickerCallback(self, sender):
+    #     if self.RCJKI.currentGlyph is None: return
+    #     color = sender.get()
+    #     r = color.redComponent()
+    #     g = color.greenComponent()
+    #     b = color.blueComponent()
+    #     a = color.alphaComponent()
     
-        self.RCJKI.currentGlyph.markColor = (r, g, b, a)
-        self.controller.updateGlyphSetList()
+    #     self.RCJKI.currentGlyph.markColor = (r, g, b, a)
+    #     self.controller.updateGlyphSetList()
 
     def windowCloses(self, sender):
         # askYesNo('Do you want to save fonts?', "Without saving you'll loose unsaved modification", alertStyle = 2, parentWindow = None, resultCallback = self.yesnocallback)
