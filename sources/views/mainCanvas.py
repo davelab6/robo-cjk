@@ -107,7 +107,10 @@ class MainCanvas():
             # Helpers.setDarkMode(self.ui.window, self.ui.darkMode)
 
     def update(self):
-        self.controller.w.mainCanvas.update()
+        try:
+            self.controller.w.mainCanvas.update()
+        except:
+            self.controller.canvasGroup.mainCanvas.update()
 
     def mouseDragged(self, info):
         # print(info)
