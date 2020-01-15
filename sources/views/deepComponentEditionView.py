@@ -143,7 +143,8 @@ class SliderGroup(Group):
             columnDescriptions = [
                                     {"title": "Layer", "editable": False, "width": 0},
                                     
-                                    {"title": "Values", "cell": slider, "width": 410},
+                                    {"title": "Values", "cell": slider, "width": 350},
+                                    {"title": "numValues", "width": 60},
                                     {"title": "Image", "editable": False, "cell": ImageListCell(), "width": 160}, 
                                     # {"title": "Axis", "cell": PopUpButtonListCell(["Proportion Axis", "Control Axis", "Localisation Axis"]), "binding": "selectedValue", "width": 100}
                                     # {"title": "Lock", "cell": checkbox, "width": 20},
@@ -208,9 +209,19 @@ class SliderGroup(Group):
         # if lock != self.slidersValuesList[sel[0]]["Lock"]:
             # changed = True 
 
+        numValues = layerInfo["numValues"]
 
-        self.RCJKI.layersInfos[selectedLayerName] = value
-        self.slidersValuesList[sel[0]]["Values"] = value
+        if int(numValues) != self.slidersValuesList[sel[0]]["numValues"]:
+            value = int(numValues)
+            layerInfo["Values"] = int(value)
+        elif int(value) != self.slidersValuesList[sel[0]]["Values"]:
+            layerInfo["numValues"] = int(value)
+
+
+        self.RCJKI.layersInfos[selectedLayerName] = int(value)
+        self.slidersValuesList[sel[0]]["Values"] = int(value)
+        self.slidersValuesList[sel[0]]["numValues"] = int(value)
+        
         # self.slidersValuesList[sel[0]]["YValue"] = YValue 
         # self.slidersValuesList[sel[0]]["Lock"] = lock
 
@@ -250,6 +261,7 @@ class SliderGroup(Group):
             self.slidersValuesList.append({'Layer': newGlyphLayer.name,
                                         'Image': None,
                                         'Values': 0,
+                                        'numValues': 0,
                                         # 'Axis': ' ',
                                         # 'YValue': 0
                                         })
@@ -599,6 +611,7 @@ class DeepComponentEditionWindow(BaseWindowController):
             pdfData = self.RCJKI.getLayerPDFImage(g, emDimensions)
 
             d = {'Layer': layerName,
+                'numValues': int(item["Values"]),
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': item["Values"],
                 # 'Axis': item['Axis']
@@ -652,6 +665,7 @@ class DeepComponentEditionWindow(BaseWindowController):
             d = {'Layer': layerName,
                 'Image': NSImage.alloc().initWithData_(pdfData),
                 'Values': 0,
+                'numValues': 0
                 # 'Axis': axis
                 # 'Lock': 1
                 }
