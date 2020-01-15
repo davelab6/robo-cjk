@@ -266,13 +266,13 @@ class SliderGroup(Group):
                                         # 'YValue': 0
                                         })
             self.RCJKI.currentGlyph.lib["Axis"] = self.axis
-            print(self.RCJKI.currentGlyph.lib["Axis"])
+            # print(self.RCJKI.currentGlyph.lib["Axis"])
             self.RCJKI.currentGlyph.update()
         else:
 
             self.RCJKI.currentGlyph = f.getLayer("foreground")[g.name]
-            if self.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
-                self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.selectedGlyphName])
+            if self.c.selectedGlyphName in self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont]:
+                self.RCJKI.currentGlyph.appendGlyph(self.RCJKI.DCFonts2Fonts[self.RCJKI.currentFont][self.c.selectedGlyphName])
 
         self.RCJKI.openGlyphWindow(self.RCJKI.currentGlyph)
         self.c.setSliderList()
