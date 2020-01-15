@@ -188,7 +188,7 @@ class SliderGroup(Group):
 
         # print(axis)
         layer = self.RCJKI.currentFont.getLayer(selectedLayerName)[self.RCJKI.currentGlyph.name]
-        print(layer.lib["Axis"])
+        # print(layer.lib["Axis"])
         # print(axis)
         # layer.lib['Axis'] = self.axis
         # layer.update()
@@ -632,7 +632,7 @@ class DeepComponentEditionWindow(BaseWindowController):
         # self.enableSliderGroup.slidersList.set(self.enableSliderGroup.slidersValuesList)
 
 
-        self.RCJKI.layersInfos = {}
+        # self.RCJKI.layersInfos = {}
         enableSliderGroup = self.enableSliderGroup
         # enableSliderName = self.enableSliderGroup.axis
 
@@ -739,6 +739,7 @@ class DeepComponentEditionWindow(BaseWindowController):
     def glyphSetListSelectionCallback(self, sender):
         sel = sender.getSelection()
         if not sel: return
+        self.RCJKI.layersInfos = {}
         self.selectedGlyphName = sender.get()[sel[0]]['Name']
         self.controller.updateDeepComponentsSetList(self.selectedGlyphName)
         self.deepComponentTranslateX, self.deepComponentTranslateY = 0, 0
