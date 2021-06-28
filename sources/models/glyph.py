@@ -134,8 +134,8 @@ class Glyph(RGlyph):
         else:
             return bool(self._glyphVariations)
 
-    def normalizedValue(self, v, minv, maxv):
-        return (v-minv)/(maxv-minv)
+    def normalizedValue(self, v, minv, maxv, defaultValue):
+        return (v-defaultValue)/(maxv-minv)
 
     def getLocation(self):
         loc = {}
@@ -157,7 +157,7 @@ class Glyph(RGlyph):
         for k, v in loc.items():
             axis = g._axes.get(k)
             if axis is not None:
-                position[k] = self.normalizedValue(v, axis.minValue, axis.maxValue)
+                position[k] = self.normalizedValue(v, axis.minValue, axis.maxValue, axis.defaultValue)
         return position
 
     def save(self):

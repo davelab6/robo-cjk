@@ -140,12 +140,13 @@ class MathDict(dict, _MathMixin):
 
 class Axis:
 
-    def __init__(self, name="", minValue=0, maxValue=1):
+    def __init__(self, name="", minValue=0, maxValue=1, defaultValue=0):
         # for k, v in kwargs.items():
         #     self[k] = v
         self.name = name
         self.minValue = minValue
         self.maxValue = maxValue
+        self.defaultValue = defaultValue
 
     def __repr__(self):
         return "<"+str(vars(self))+">"
@@ -538,6 +539,12 @@ class VariationGlyphsInfos:
     def __getitem__(self, item):
         return getattr(self, item)
 
+"""
+variation.get('location'), axes {'BL_S_lo': 0.0, 'BR_S_lo': 0.0, 'X_WH_bo': -1.0, 'X_WV_bo': 0.0, 'X_X_fl': 0.0, 'X_X_na': 0.0} [<{'name': 'BL_S_lo', 'minValue': 0.0, 'maxValue': 1.0, 'defaultValue': 0}>, <{'name': 'BR_S_lo', 'minValue': 0.0, 'maxValue': 1.0, 'defaultValue': 0}>, <{'name': 'X_WH_bo', 'minValue': -1, 'maxValue': 1.0, 'defaultValue': 0}>, <{'name': 'X_WV_bo', 'minValue': 0.0, 'maxValue': 1.0, 'defaultValue': 0}>, <{'name': 'X_X_fl', 'minValue': 0.0, 'maxValue': 1.0, 'defaultValue': 0}>, <{'name': 'X_X_na', 'minValue': 0.0, 'maxValue': 1.0, 'defaultValue': 0}>]
+locations, loc [{'BL_S_lo': 1.0, 'X_WH_bo': 0}, {'BR_S_lo': 1.0, 'X_WH_bo': 0}, {'X_WH_bo': 1.0}, {'X_WH_bo': 0, 'X_WV_bo': 1.0}, {'X_WH_bo': 0, 'X_X_fl': 1.0}, {'X_WH_bo': 0, 'X_X_na': 1.0}] {}
+
+"""
+
 class VariationGlyphs(list):
 
     def __init__(self, variationGlyphs=[], axes = []):
@@ -562,9 +569,11 @@ class VariationGlyphs(list):
             variation.location[axisName] = minValue
 
     def addVariation(self, variation, axes):
+        print("variation.get('location'), axes", variation.get('location'), axes)
         loc = self._normalizedLocation(variation.get('location'), axes)
         locations = [self._normalizedLocation(x, axes) for x in self.locations]
         if loc in locations or not loc:
+            print("locations, loc", locations, loc)
             variation["on"] = False
         self.append(VariationGlyphsInfos(**variation))
 
@@ -591,7 +600,8 @@ class VariationGlyphs(list):
         variation.location = location
 
     def _normalizedLocation(self, location, axes):
-        return {k:v for k,v in location.items() if v != axes.get(k).minValue}
+        # return {k:v for k,v in location.items() if v != axes.get(k).minValue}
+        return {k:v for k,v in location.items() if v != axes.get(k).defaultValue}
 
     # def __iter__(self):
     #     for x in self:
@@ -631,7 +641,8 @@ class VariationGlyphs(list):
         for variation in self:
             empty = True
             for k, v in variation.location.items():
-                if v != axes.get(k).minValue:
+                # if v != axes.get(k).minValue:
+                if v != axes.get(k).defaultValue:
                     empty = False
                     break
             if empty:
