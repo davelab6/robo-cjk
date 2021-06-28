@@ -140,13 +140,16 @@ class MathDict(dict, _MathMixin):
 
 class Axis:
 
-    def __init__(self, name="", minValue=0, maxValue=1, defaultValue=0):
+    def __init__(self, name="", minValue=0, maxValue=1, defaultValue=None):
         # for k, v in kwargs.items():
         #     self[k] = v
         self.name = name
         self.minValue = minValue
         self.maxValue = maxValue
-        self.defaultValue = defaultValue
+        if defaultValue is None:
+            self.defaultValue = minValue
+        else:
+            self.defaultValue = defaultValue
 
     def __repr__(self):
         return "<"+str(vars(self))+">"
