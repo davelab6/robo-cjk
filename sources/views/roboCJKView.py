@@ -72,7 +72,7 @@ class SmartTextBox(TextBox):
     def __init__(self, posSize, text="", alignment="natural", 
         selectable=False, callback=None, sizeStyle=40.0,
         red=0,green=0,blue=0, alpha=1.0):
-        super(SmartTextBox, self).__init__(posSize, text=text, alignment=alignment, 
+        super().__init__(posSize, text=text, alignment=alignment, 
             selectable=selectable, sizeStyle=sizeStyle)
         
     def _setSizeStyle(self, sizeStyle):
@@ -189,19 +189,19 @@ class RoboCJKView(BaseWindowController):
             callback = self.reloadProjectCallback
             )
 
-        self.w.generateFontButton = Button(
-            (10, 70, 200, 20),
-            "generateFont",
-            callback = self.generateFontButtonCallback,
-            )
-        self.w.generateFontButton.enable(False)
+        # self.w.generateFontButton = Button(
+        #     (10, 70, 200, 20),
+        #     "generateFont",
+        #     callback = self.generateFontButtonCallback,
+        #     )
+        # self.w.generateFontButton.enable(False)
 
-        self.w.teamManagerButton = Button(
-            (10, 100, 200, 20),
-            "Team manager",
-            callback = self.teamManagerButtonCallback,
-            )
-        self.w.teamManagerButton.enable(False)
+        # self.w.teamManagerButton = Button(
+        #     (10, 100, 200, 20),
+        #     "Team manager",
+        #     callback = self.teamManagerButtonCallback,
+        #     )
+        # self.w.teamManagerButton.enable(False)
 
         self.RCJKI.textCenterWindows = []
         self.w.textCenterButton = Button(
@@ -212,7 +212,7 @@ class RoboCJKView(BaseWindowController):
         self.w.textCenterButton.enable(False)
 
         self.w.codeEditorButton = Button(
-            (410, 100, 200, 20),
+            (10, 70, 200, 20),
             "Scripting Window",
             callback = self.codeEditorButtonCallback,
             )
@@ -1061,8 +1061,8 @@ class RoboCJKView(BaseWindowController):
             # self.RCJKI.dataBase = {}
             self.w.saveProjectButton.enable(True)
             self.w.fontInfos.enable(True)
-            self.w.generateFontButton.enable(True)
-            self.w.teamManagerButton.enable(True)
+            # self.w.generateFontButton.enable(True)
+            # self.w.teamManagerButton.enable(True)
             
             self.w.textCenterButton.enable(True)
             self.w.codeEditorButton.enable(True)
@@ -1169,7 +1169,23 @@ class RoboCJKView(BaseWindowController):
         if sender == self.w.characterGlyph:
             newGlyphName = newGlyphName["name"]
         if newGlyphName == self.prevGlyphName: return
-        if not self.currentFont.renameGlyph(self.prevGlyphName, newGlyphName):
+
+        message = 'Are you sure to rename %s to %s?'%(self.prevGlyphName, newGlyphName)
+        answer = AskYesNoCancel(
+            message, 
+            title='Rename Glyph', 
+            default=-1, 
+            informativeText="",
+            )
+        if answer != 1: 
+            self.w.atomicElement.set(self.currentFont.atomicElementSet)
+            self.w.deepComponent.set(self.currentFont.deepComponentSet)
+            charSet = [dict(char = files.unicodeName2Char(x), name = x) for x in self.currentFont.characterGlyphSet]
+            self.w.characterGlyph.set(charSet)
+            return False
+        else:
+            renamed = self.currentFont.renameGlyph(self.prevGlyphName, newGlyphName)
+        if not renamed:
             if sender == self.w.characterGlyph:
                 sender.set([dict(char = files.unicodeName2Char([x["name"], self.prevGlyphName][x["name"] == newGlyphName]), name = [x["name"], self.prevGlyphName][x["name"] == newGlyphName]) for x in sender.get()])
             else:

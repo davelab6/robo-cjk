@@ -28,6 +28,7 @@ from mojo.UI import PostBannerNotification
 from mojo.extensions import getExtensionDefault, setExtensionDefault
 from mojo.UI import SetCurrentLayerByName
 from controllers import client
+from utils import colors
 
 import json, os
 blackrobocjk_locker = "com.black-foundry.blackrobocjk_locker"
@@ -792,7 +793,7 @@ class Login:
         self.w.close()
 
     def closeCallback(self, sender):
-        if not self.w.git.userName.get() or not self.w.git.password.get() or not self.w.git.hostlocker.get(): return
+        # if not self.w.git.userName.get() or not self.w.git.password.get() or not self.w.git.hostlocker.get(): return
 
         self.RCJKI.gitUserName = self.w.git.userName.get()
         self.RCJKI.gitPassword = self.w.git.password.get()
@@ -848,6 +849,7 @@ class LocaliseGlyphSheet:
         self.RCJKI = RCJKI
         self.controller = controller
         self.glyphName = glyphName
+        self.databaseKeys = set(self.RCJKI.currentFont.dataBase.keys())
         self.dependencies_glyphset = dependencies_glyphset
         self.glyphset = glyphset
         self.sender = sender
@@ -871,12 +873,15 @@ class LocaliseGlyphSheet:
         if self.glyph.type != "atomicElement":
             y = 60
             for i, deepComponent in enumerate(self.glyph._deepComponents):
-                glyphName = TextBox((10, y, 150, 20), deepComponent["name"])
-                availableSuffix = ["Choose suffix (optional)"]+[getSuffix(x) for x in dependencies_glyphset if "." in x and x.split(".")[0] == deepComponent["name"]]
-                glyphNameExtension = PopUpButton((255, y, -10, 20), availableSuffix, callback = self.popUpButtonCallback)
+                try:
+                    glyphName = TextBox((10, y, 150, 20), "%s %s"%(chr(int(deepComponent["name"].split('_')[1], 16)),deepComponent["name"]))
+                except:
+                    glyphName = TextBox((10, y, 150, 20), deepComponent["name"])
+                self.availableSuffix = ["Choose suffix (optional)"]+["."+getSuffix(x) for x in dependencies_glyphset if "." in x and x.split(".")[0] == deepComponent["name"]]
+                glyphNameExtension = PopUpButton((255, y, -10, 20), self.availableSuffix, callback = self.popUpButtonCallback)
                 glyphNameExtensionEditText = EditText((120, y, 135, 20), '', callback = self.editTextCallback)
                 setattr(self.w, deepComponent["name"]+str(i), glyphName)
-                if len(availableSuffix)>1:
+                if len(self.availableSuffix)>1:
                     setattr(self.w, f"{deepComponent['name']}Extension{i}", glyphNameExtension)
                     setattr(self.w, f"{deepComponent['name']}ExtensionEditText{i}", glyphNameExtensionEditText)
                 else:
@@ -897,6 +902,37 @@ class LocaliseGlyphSheet:
         name = sender.get()
         if name in self.available_localisation_suffix:
             self.w.glyphNameExtension.set(self.available_localisation_suffix.index(name))
+        if not name.startswith("."):
+            name = "."+name
+        dataname = "%s%s"%(chr(int(self.glyphName["name"][3:], 16)), name)
+        if dataname in self.databaseKeys:
+            glyphComposition = [x for x in self.RCJKI.currentFont.dataBase[dataname].split(" ") if x]
+            for i, deepComponent in enumerate(self.glyph._deepComponents):
+                dcchar = chr(int(deepComponent['name'].split("_")[1], 16))
+                count = 0
+                for x in glyphComposition:
+                    if x[0] == dcchar:
+                        count+=1
+                if count > 1: continue
+                index = None
+                for j, c in enumerate(glyphComposition):
+                    if c[0] == dcchar and '.' in c:
+                        index = j
+                        suf = c[1:]
+                        if deepComponent['name']+suf in self.RCJKI.currentFont.staticDeepComponentSet():
+                            suflist = getattr(self.w, f"{deepComponent['name']}Extension{i}").getItems()
+                            if suf in suflist:
+                                getattr(self.w, f"{deepComponent['name']}ExtensionEditText{i}").set(suf)
+                                getattr(self.w, f"{deepComponent['name']}Extension{i}").set(suflist.index(suf))
+                if index is not None:
+                    glyphComposition = [x for i, x in enumerate(glyphComposition) if i != index]
+        else:
+            for i, deepComponent in enumerate(self.glyph._deepComponents):
+                try:
+                    getattr(self.w, f"{deepComponent['name']}ExtensionEditText{i}").set("")
+                    getattr(self.w, f"{deepComponent['name']}Extension{i}").set(0)
+                except:
+                    getattr(self.w, f"{deepComponent['name']}Extension{i}").set("No suffix available")
 
     def editTextCallback(self, sender):
         if self.glyph.type != "atomicElement":
@@ -931,10 +967,14 @@ class LocaliseGlyphSheet:
             self.selectedSuffix = f".{self.selectedSuffix}"
         newGlyphName = self.glyph.name + self.selectedSuffix
         self.RCJKI.currentFont.duplicateGlyph(self.glyph.name, newGlyphName)
+        ####
+        self.RCJKI.currentFont.markGlyph(newGlyphName, colors.STATUS_COLORS[colors.CHECKING1_name], colors.CHECKING1_name)
+        ####
         if not self.RCJKI.currentFont.mysql:
             self.RCJKI.currentFont.batchLockGlyphs([self.RCJKI.currentFont[newGlyphName]])
         else:
             self.RCJKI.currentFont.batchLockGlyphs([newGlyphName])
+        torename = {}
         if self.glyph.type != "atomicElement":
             for i, deepComponent in enumerate(self.glyph._deepComponents):
                 if not hasattr(self.w, f"{deepComponent['name']}ExtensionEditText{i}"):continue
@@ -943,7 +983,10 @@ class LocaliseGlyphSheet:
                 ext = element.get()
                 if ext == "Choose suffix (optional)" or ext == "": continue
                 if ext.startswith("."): ext = ext[1:]
-                self.RCJKI.currentFont[newGlyphName].renameDeepComponent(i, deepComponent["name"]+'.'+ext)
+                torename[i] = deepComponent["name"]+'.'+ext
+                # self.RCJKI.currentFont[newGlyphName].renameDeepComponent(i, deepComponent["name"]+'.'+ext)
+        for i in sorted(list(torename.keys()), reverse=True):
+            self.RCJKI.currentFont[newGlyphName].renameDeepComponent(i, torename[i])
         self.w.close()
         index = sorted(list(self.glyphset(update = True))).index(newGlyphName)
         self.sender.setSelection([])

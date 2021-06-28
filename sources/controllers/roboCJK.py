@@ -275,19 +275,18 @@ class RoboCJKController(object):
         def _decompose(glyph, axis, layername):
             if layername not in self.currentFont._RFont.layers:
                 self.currentFont._RFont.newLayer(layername)
-                if axis:
-                    glyphAxis = glyph._axes.get(axis)
-                    ais = glyph.preview({axis:glyphAxis.maxValue})
-                else:
-                    ais = glyph.preview()
-                f = self.currentFont._RFont.getLayer(layername)
-                f.newGlyph(glyph.name)
-                g1 = f[glyph.name]
-                g1.clear()
-                for ai in ais:
-                    # g._transformGlyph()
-                    for c in ai.glyph:
-                        g1.appendContour(c)
+            if axis:
+                glyphAxis = glyph._axes.get(axis)
+                ais = glyph.preview({axis:glyphAxis.maxValue})
+            else:
+                ais = glyph.preview()
+            f = self.currentFont._RFont.getLayer(layername)
+            f.newGlyph(glyph.name)
+            g1 = f[glyph.name]
+            g1.clear()
+            for ai in ais:
+                for c in ai.glyph:
+                    g1.appendContour(c)
 
         for axis in self.currentFont.fontVariations:
             axisLayerName = "backup_%s"%axis
@@ -365,6 +364,8 @@ class RoboCJKController(object):
                     endList.append(axis)
                     toDel.append(i)
         oldList = [x for i, x in enumerate(oldList) if i not in toDel]
+        keys = sorted([x["Axis"] for x in oldList])
+        oldList = [y for x in keys for y in oldList if y["Axis"] == x]
         newList.extend(oldList)
         newList.extend(endList)
         return newList
@@ -576,7 +577,7 @@ class RoboCJKController(object):
             dc = data[i]
             dc_name = self.currentGlyph._deepComponents[i].name
             glyph = self.currentFont.get(dc_name)
-            for axis, variation in zip(glyph._axes, glyph._glyphVariations):
+            for axis in glyph._axes:
                 minValue = axis.minValue
                 maxValue = axis.maxValue
                 axisName = axis.name

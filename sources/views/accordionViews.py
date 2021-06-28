@@ -90,6 +90,7 @@ class CompositionRulesGroup(Group):
         self.RCJKI = RCJKI
         self.controller = controller
         self.glyph = None
+        self.existingDeepComponentInstances = []
         self.char = SmartTextBox(
             (0, 0, 80, -0),
             "",
@@ -112,8 +113,13 @@ class CompositionRulesGroup(Group):
             drawFocusRing = False,
             selectionCallback = self.variantListSelectionCallback,
             doubleClickCallback = self.variantListDoubleClickCallback)
+        self.filterExistingInstance = EditText(
+            (-60, 0, -0, 20), "",
+            sizeStyle = 'small',
+            callback = self.filterExistingInstanceCallback
+            )
         self.existingInstancesList = List(
-            (-60, 0, -0, -20), [], 
+            (-60, 20, -0, -20), [], 
             drawFocusRing = False,
             selectionCallback = self.existingInstancesListSelectionCallback,
             doubleClickCallback = self.existingInstancesListDoubleClickCallback
@@ -181,13 +187,16 @@ class CompositionRulesGroup(Group):
             return
         char = sender.get()[sel[0]]
         self.code = files.normalizeUnicode(hex(ord(char[0]))[2:].upper())
-        self.suffix = char[1:]
+        self.suffix = char[1:].replace(" ", "")
         if self.suffix == " ": self.suffix = ""
         dcName = "DC_%s_00%s"%(self.code, self.suffix)
-        deepComponentSet = self.RCJKI.currentFont.deepComponentSet
+        deepComponentSet = list(self.RCJKI.currentFont.staticDeepComponentSet())
         if dcName not in deepComponentSet: 
-            self.variantList.set([])
-            return
+            dcName = "DC_%s_00"%(self.code)
+            self.suffix = ""
+            if dcName not in deepComponentSet: 
+                self.variantList.set([])
+                return
         index = deepComponentSet.index(dcName)
         l = ["00"]
         i = 1
@@ -245,6 +254,15 @@ class CompositionRulesGroup(Group):
     def variantListDoubleClickCallback(self, sender):
         self.RCJKI.currentGlyph.addDeepComponentNamed(self.deepComponentName)
         self.RCJKI.updateDeepComponent(update = False)
+
+    def filterExistingInstanceCallback(self, sender):
+        if not self.existingDeepComponentInstances: return
+        senderget = sender.get()
+        if not senderget:
+            self.existingInstancesList.set(self.existingDeepComponentInstances)
+        else:
+            l = [x for x in self.existingDeepComponentInstances if senderget in x]
+            self.existingInstancesList.set(l)
 
     @refresh
     def existingInstancesListSelectionCallback(self, sender):
@@ -1820,7 +1838,7 @@ class CharacterGlyphInspector(Inspector):
         self.RCJKI = RCJKI
         self.glyphVariationsAxes = glyphVariationsAxes
         self.deepComponentAxes = deepComponentAxes
-        self.w = Window((0, 0, 400, 850), self.RCJKI.currentGlyph.name, minSize = (100, 200), closable = False)
+        self.w = Window((0, 0, 400, 850), self.RCJKI.currentGlyph.name, minSize = (100, 200), closable = False, autosaveName = "inspector")
 
         self.type = "characterGlyph"
         
