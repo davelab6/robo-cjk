@@ -764,7 +764,7 @@ class ModifyAxisSheet:
 
         self.RCJKI.currentGlyph._axes[self.axisIndex].minValue = newMinValue
         self.RCJKI.currentGlyph._axes[self.axisIndex].maxValue = newMaxVamue
-        if self.changeDesignSpace:
+        if self.changeDesignSpace == 1:
             for variation in self.RCJKI.currentGlyph._glyphVariations:
                 if axisName in variation.location:
                     systemValue = self.RCJKI.systemValue(variation.location[axisName], oldMinValue, oldMaxValue)
@@ -1154,9 +1154,9 @@ class SourcesGroup(Group):
 
     def setList(self):
         if self.RCJKI.currentGlyph.type == "atomicElement":
-            self.sources = [{"On/Off":x.on, "layerName":x.layerName, **{y.name:y.minValue for y in self.RCJKI.currentGlyph._axes}} for x in self.RCJKI.currentGlyph._glyphVariations]
+            self.sources = [{"On/Off":x.on, "layerName":x.layerName, **{y.name:y.defaultValue for y in self.RCJKI.currentGlyph._axes}} for x in self.RCJKI.currentGlyph._glyphVariations]
         else:    
-            self.sources = [{"On/Off":x.on, "name":x.sourceName, **{y.name:y.minValue for y in self.RCJKI.currentGlyph._axes}} for x in self.RCJKI.currentGlyph._glyphVariations]
+            self.sources = [{"On/Off":x.on, "name":x.sourceName, **{y.name:y.defaultValue for y in self.RCJKI.currentGlyph._axes}} for x in self.RCJKI.currentGlyph._glyphVariations]
         for i, source in enumerate(self.sources):
             source.update(self.RCJKI.currentGlyph._glyphVariations[i].location)
 
