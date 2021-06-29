@@ -572,7 +572,6 @@ class VariationGlyphs(list):
             variation.location[axisName] = minValue
 
     def addVariation(self, variation, axes):
-        print("variation.get('location'), axes", variation.get('location'), axes)
         loc = self._normalizedLocation(variation.get('location'), axes)
         locations = [self._normalizedLocation(x, axes) for x in self.locations]
         if loc in locations or not loc:
