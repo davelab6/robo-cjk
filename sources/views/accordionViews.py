@@ -904,7 +904,7 @@ class AxesGroup(Group):
                 })
             self.axesList.set(newList)
 
-        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "DefaultValue":x["DefaultValue"], "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in newList]
+        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "DefaultValue":self.RCJKI.userValue(x["DefaultValue"], x["MinValue"], x["MaxValue"]), "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in newList]
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
         self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
         self.RCJKI.currentGlyph.reinterpolate = True
