@@ -1064,7 +1064,7 @@ class SourcesSheet:
         for i, axis in enumerate(self.RCJKI.currentGlyph._axes):
             textbox = TextBox((10, y, 90, 20), axis.name, sizeStyle = 'small')
             minValue = TextBox((100, y+5, 50, 20), axis.minValue, sizeStyle = 'small', alignment="right")
-            editText = EditText((150, y, -50, 20), [axis.minValue, axis.maxValue][i + 1 == len(self.RCJKI.currentGlyph._axes)], sizeStyle = "small", 
+            editText = EditText((150, y, -50, 20), [axis.defaultValue, axis.maxValue][i + 1 == len(self.RCJKI.currentGlyph._axes)], sizeStyle = "small", 
                 # formatter = numberFormatter, 
                 continuous = False,
                 callback = self.valuesCallback)
