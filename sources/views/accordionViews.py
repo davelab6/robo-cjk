@@ -899,7 +899,7 @@ class AxesGroup(Group):
                 "Axis":e["Axis"],
                 "DefaultValue":e["DefaultValue"],
                 "MinValue":e["MinValue"],
-                "PreviewValue":0,#self.RCJKI.systemValue(0, minValue, maxValue),
+                "PreviewValue":e["DefaultValue"],#self.RCJKI.systemValue(0, minValue, maxValue),
                 "MaxValue":e["MaxValue"],
                 })
             self.axesList.set(newList)
@@ -913,7 +913,7 @@ class AxesGroup(Group):
         self.controller.updatePreview()
 
     def setList(self):
-        self.axes = [dict(Axis=x.name, DefaultValue=x.defaultValue, MinValue=x.minValue, PreviewValue=0, MaxValue=x.maxValue) for x in self.RCJKI.currentGlyph._axes]
+        self.axes = [dict(Axis=x.name, DefaultValue=x.defaultValue, MinValue=x.minValue, PreviewValue=self.RCJKI.userValue(x.defaultValue, x.minValue, x.maxValue), MaxValue=x.maxValue) for x in self.RCJKI.currentGlyph._axes]
         # self.axesList.set(self.axes)
 
         if hasattr(self, "axesList"):
