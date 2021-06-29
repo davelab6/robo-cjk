@@ -738,6 +738,9 @@ class ModifyAxisSheet:
         self.w.maxValueTitle = TextBox((10, 40, 100, 20), "maxValue", sizeStyle='small')
         self.w.maxValue = EditText((110, 40, 100, 20), axisList["MaxValue"], sizeStyle='small')
 
+        self.w.defaultValueTitle = TextBox((10, 70, 100, 20), "defaultValue", sizeStyle='small')
+        self.w.defaultValue = EditText((110, 70, 100, 20), axisList["DefaultValue"], sizeStyle='small')
+
         self.changeDesignSpace = 1
         self.w.changeDesignSpaceCheckBox = CheckBox((10, -50, -10, 20), 'Change design space values', value = self.changeDesignSpace, callback = self.changeDesignSpaceCallback, sizeStyle="small")
 
@@ -891,15 +894,17 @@ class AxesGroup(Group):
         for i, e in enumerate(self.axesList.get()):
             minValue = float(e["MinValue"])
             maxValue = float(e["MaxValue"])
+            defaultValue = float(e["DefaultValue"])
             newList.append({
                 "Axis":e["Axis"],
+                "DefaultValue":e["DefaultValue"],
                 "MinValue":e["MinValue"],
                 "PreviewValue":0,#self.RCJKI.systemValue(0, minValue, maxValue),
                 "MaxValue":e["MaxValue"],
                 })
             self.axesList.set(newList)
 
-        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in newList]
+        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "DefaultValue":x["DefaultValue"], "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in newList]
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
         self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
         self.RCJKI.currentGlyph.reinterpolate = True
@@ -908,7 +913,7 @@ class AxesGroup(Group):
         self.controller.updatePreview()
 
     def setList(self):
-        self.axes = [dict(Axis=x.name, MinValue=x.minValue, PreviewValue=0, MaxValue=x.maxValue) for x in self.RCJKI.currentGlyph._axes]
+        self.axes = [dict(Axis=x.name, DefaultValue=x.defaultValue, MinValue=x.minValue, PreviewValue=0, MaxValue=x.maxValue) for x in self.RCJKI.currentGlyph._axes]
         # self.axesList.set(self.axes)
 
         if hasattr(self, "axesList"):
@@ -919,6 +924,7 @@ class AxesGroup(Group):
             self.axes,
             columnDescriptions = [
                     {"title": "Axis", "editable": True, "width": 100},
+                    {"title": "DefaultValue", "editable": True, "width": 40},
                     {"title": "MinValue", "editable": True, "width": 40},
                     {"title": "PreviewValue", "cell": slider},
                     {"title": "MaxValue", "editable": True, "width": 40}
@@ -950,8 +956,10 @@ class AxesGroup(Group):
             else:
                 minValue = float(e["MinValue"])
                 maxValue = float(e["MaxValue"])
+                defaultValue = float(e["DefaultValue"])
                 newList.append({
                     "Axis":e["Axis"],
+                    "DefaultValue":e["DefaultValue"],
                     "MinValue":e["MinValue"],
                     "PreviewValue":self.RCJKI.systemValue(value, minValue, maxValue),
                     "MaxValue":e["MaxValue"],
@@ -996,13 +1004,13 @@ class AxesGroup(Group):
 
             l = []
             for axis in self.RCJKI.currentGlyph._axes:
-                l.append({'Axis':axis.name, 'PreviewValue':0, "MinValue":axis.minValue, "MaxValue":axis.maxValue})
+                l.append({'Axis':axis.name, 'PreviewValue':0, "DefaultValue":axis.defaultValue, "MinValue":axis.minValue, "MaxValue":axis.maxValue})
             sender.set(l)
             sender.setSelection(sel)
 
         axis = sender.get()[sel[0]]["Axis"]
         self.sliderValueEditText.set(self.RCJKI.userValue(sliderValue, self.RCJKI.currentGlyph._axes.get(axis).minValue, self.RCJKI.currentGlyph._axes.get(axis).maxValue))
-        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in senderGet]
+        self.RCJKI.currentGlyph.sourcesList = [{"Axis":x["Axis"], "DefaultValue":x["DefaultValue"], "MinValue":x["MinValue"], "MaxValue":x["MaxValue"], "PreviewValue":self.RCJKI.userValue(float(x["PreviewValue"]), float(x["MinValue"]), float(x["MaxValue"]))} for x in senderGet]
         self.RCJKI.updateDeepComponent(update = False)
         self.controller.updatePreview()
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
