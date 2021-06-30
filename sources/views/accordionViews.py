@@ -671,7 +671,7 @@ class AxisSheet:
         self.RCJKI = RCJKI
         self.controller = controller
         self.glyphType = glyphType
-        self.w = Sheet((300, 140), parentWindow)
+        self.w = Sheet((300, 170), parentWindow)
 
         if glyphType != "characterGlyph":
             self.w.axisNameTitle = TextBox((10, 20, 90, 20), "Axis name", sizeStyle = 'small')
@@ -686,25 +686,45 @@ class AxisSheet:
         #     self.w.axisName = PopUpButton((100, 20, 150, 20), self.layers, sizeStyle = 'small')
 
         self.w.minValueTitle = TextBox((10, 50, 90, 20), "Min value", sizeStyle = 'small')
-        self.w.minValue = EditText((100, 50, 150, 20), 0, sizeStyle = 'small', formatter = numberFormatter)
+        self.w.minValue = EditText((100, 50, 150, 20), 0, sizeStyle = 'small', 
+            # formatter = numberFormatter, 
+            callback = self.valuesCallback, continuous = False)
 
         self.w.maxValueTitle = TextBox((10, 80, 90, 20), "Max Value", sizeStyle = 'small')
-        self.w.maxValue = EditText((100, 80, 150, 20), 1, sizeStyle = 'small', formatter = numberFormatter)
+        self.w.maxValue = EditText((100, 80, 150, 20), 1, sizeStyle = 'small', 
+            # formatter = numberFormatter, 
+            callback = self.valuesCallback, continuous = False)
+
+        self.w.defaultValueTitle = TextBox((10, 110, 90, 20), "Default Value", sizeStyle = 'small')
+        self.w.defaultValue = EditText((100, 110, 150, 20), 0, sizeStyle = 'small', 
+            # formatter = numberFormatter, 
+            callback = self.valuesCallback, continuous = False)        
 
         self.w.apply = Button((150, -20, -0, 20), "Add", sizeStyle = 'small',callback = self.applyCallback)
         self.w.cancel = Button((00, -20, 150, 20), "Cancel", sizeStyle = 'small',callback = self.cancelCallback)
         self.w.setDefaultButton(self.w.apply)
         self.w.open()
 
+    def valuesCallback(self, sender):
+        minvalue = str_to_int_or_float(self.w.minValue.get())
+        maxvalue = str_to_int_or_float(self.w.maxValue.get())
+        defaultvalue = str_to_int_or_float(self.w.defaultValue.get())
+
+        print(minvalue, maxvalue, defaultvalue)
+
+        if not min([minvalue, maxvalue]) <= defaultvalue <= max([minvalue, maxvalue]):
+            self.w.defaultValue.set(minvalue)
+
     def applyCallback(self, sender):
         if self.glyphType != "characterGlyph":
             axisName = self.w.axisName.get()
         else: 
             axisName = self.fontVariations[self.w.axisName.get()]
-        minValue = int(self.w.minValue.get())
-        maxValue = int(self.w.maxValue.get())
-        if not all([x!="" for x in [axisName, minValue, maxValue]]): return
-        self.RCJKI.currentGlyph.addAxis(axisName, minValue, maxValue)
+        minValue = str_to_int_or_float(self.w.minValue.get())
+        maxValue = str_to_int_or_float(self.w.maxValue.get())
+        defaultValue = str_to_int_or_float(self.w.defaultValue.get())
+        if not all([x!="" for x in [axisName, minValue, maxValue, defaultValue]]): return
+        self.RCJKI.currentGlyph.addAxis(axisName, minValue, maxValue, defaultValue)
         self.controller.setList()
         self.controller.controller.sourcesItem.setList()
         self.w.close()
@@ -756,17 +776,22 @@ class ModifyAxisSheet:
         axisName = self.axisList["Axis"]
         oldMinValue = str_to_int_or_float(self.axisList["MinValue"])
         oldMaxValue = str_to_int_or_float(self.axisList["MaxValue"])
+        oldDefaultValue = str_to_int_or_float(self.axisList["DefaultValue"])
 
         newMinValue = self.w.minValue.get()
         newMaxVamue = self.w.maxValue.get()
+        newDefaultValue = self.w.defaultValue.get()
 
         try:
             newMinValue = str_to_int_or_float(newMinValue)
             newMaxVamue = str_to_int_or_float(newMaxVamue)
+            newDefaultValue = str_to_int_or_float(newDefaultValue)
         except: return
 
         self.RCJKI.currentGlyph._axes[self.axisIndex].minValue = newMinValue
         self.RCJKI.currentGlyph._axes[self.axisIndex].maxValue = newMaxVamue
+        self.RCJKI.currentGlyph._axes[self.axisIndex].defaultValue = newDefaultValue
+
         if self.changeDesignSpace == 1:
             for variation in self.RCJKI.currentGlyph._glyphVariations:
                 if axisName in variation.location:
@@ -899,7 +924,7 @@ class AxesGroup(Group):
                 "Axis":e["Axis"],
                 "DefaultValue":e["DefaultValue"],
                 "MinValue":e["MinValue"],
-                "PreviewValue":e["DefaultValue"],#self.RCJKI.systemValue(0, minValue, maxValue),
+                "PreviewValue":self.RCJKI.systemValue(e["DefaultValue"], e["MinValue"], e["MaxValue"]),#self.RCJKI.systemValue(0, minValue, maxValue),
                 "MaxValue":e["MaxValue"],
                 })
             self.axesList.set(newList)
@@ -1072,6 +1097,7 @@ class SourcesSheet:
         self.axes = {}
         for i, axis in enumerate(self.RCJKI.currentGlyph._axes):
             textbox = TextBox((10, y, 90, 20), axis.name, sizeStyle = 'small')
+            defaultValue = TextBox((70, y+5, 100, 20), "default:%s"%axis.defaultValue, sizeStyle = 'small', alignment="left")
             minValue = TextBox((100, y+5, 50, 20), axis.minValue, sizeStyle = 'small', alignment="right")
             editText = EditText((150, y, -50, 20), [axis.defaultValue, axis.maxValue][i + 1 == len(self.RCJKI.currentGlyph._axes)], sizeStyle = "small", 
                 # formatter = numberFormatter, 
@@ -1079,6 +1105,7 @@ class SourcesSheet:
                 callback = self.valuesCallback)
             maxValue = TextBox((-50, y+5, 50, 20), axis.maxValue, sizeStyle = 'small', alignment="left")
             setattr(self.w, "%sName"%axis.name, textbox)
+            setattr(self.w, "%sdefaultValue"%axis.name, defaultValue)
             setattr(self.w, "%sminValue"%axis.name, minValue)
             setattr(self.w, axis.name+str(i), editText)
             setattr(self.w, "%smaxValue"%axis.name, maxValue)

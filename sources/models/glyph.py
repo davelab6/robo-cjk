@@ -254,8 +254,8 @@ class Glyph(RGlyph):
             self.redrawSelectedElementPreview = True
             return True
 
-    def addAxis(self, axisName="", minValue="", maxValue=""):
-        self._axes.addAxis(dict(name = axisName, minValue = minValue, maxValue = maxValue))
+    def addAxis(self, axisName="", minValue="", maxValue="", defaultValue =""):
+        self._axes.addAxis(dict(name = axisName, minValue = minValue, maxValue = maxValue, defaultValue = defaultValue))
         self._glyphVariations.addAxisToLocations(axisName = axisName, minValue=minValue)
 
     def removeAxis(self, index):
