@@ -762,7 +762,7 @@ class ModifyAxisSheet:
         self.w.defaultValue = EditText((110, 70, 100, 20), axisList["DefaultValue"], sizeStyle='small')
 
         self.changeDesignSpace = 1
-        self.w.changeDesignSpaceCheckBox = CheckBox((10, -50, -10, 20), 'Change design space values', value = self.changeDesignSpace, callback = self.changeDesignSpaceCallback, sizeStyle="small")
+        self.w.changeDesignSpaceCheckBox = CheckBox((10, -50, -10, 20), "Designspace range follows axis ranges", value = self.changeDesignSpace, callback = self.changeDesignSpaceCallback, sizeStyle="small")
 
         self.w.cancel = Button((0, -20, 150, 20), "cancel", sizeStyle = "small", callback = self.cancelCallback)
         self.w.apply = Button((150, -20, 150, 20), "apply", sizeStyle = "small", callback = self.applyCallback)
@@ -840,16 +840,16 @@ class AxesGroup(Group):
 
         self.setList()
 
-        self.modifyAxisButton = Button((0, -40, 80, 20), "Modify axis", sizeStyle="small", callback = self.modifyAxisCallback)
+        self.modifyAxisButton = Button((0, -40, 140, 20), "Edit selected axis range", sizeStyle="small", callback = self.modifyAxisCallback)
 
         if glyphtype in ["deepComponent", "atomicElement"]:
             self.editSelectedAxisExtremeValueButton = Button(
-                (80, -40, 200, 20), 
-                "Edit selected axis extreme value", 
+                (140, -40, 200, 20), 
+                "Edit selected axis maximum value", 
                 sizeStyle = "small",
                 callback = self.editSelectedAxisExtremeValueButtonCallback)
             self.setLocationTo1Button = Button(
-                (280, -40, 100, 20), 
+                (340, -40, 100, 20), 
                 "Set location to 1", 
                 sizeStyle = "small",
                 callback = self.setLocationTo1ButtonCallback)
