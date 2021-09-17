@@ -37,7 +37,7 @@ WIP_name = 'wip'
 CHECKING1_name = 'checking-1'
 CHECKING2_name = 'checking-2'
 CHECKING3_name = 'checking-3'
-DONE_name = 'done'
+DONE_name = 'validated'
 
 names = [WIP_name, CHECKING1_name, CHECKING2_name, CHECKING3_name, DONE_name]
 colorsvalues = [INPROGRESS, CHECKING1, CHECKING2, CHECKING3, DONE]

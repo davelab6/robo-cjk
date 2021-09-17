@@ -145,6 +145,7 @@ class AtomicElement(Glyph):
             if axesKey in self._RGlyph.lib:
                 self._axes = Axes(self._RGlyph.lib[axesKey])
                 self._glyphVariations = VariationGlyphs(self._RGlyph.lib[variationGlyphsKey], self._axes)
+                self._status = self._RGlyph.lib.get(statusKey, 0)
             else:
                 self._axes = Axes()
                 self._axes._init_with_old_format(dict(self._RGlyph.lib[variationGlyphsKey]))

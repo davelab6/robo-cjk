@@ -27,6 +27,7 @@ from AppKit import NSColor, NSFont
 from utils import decorators, files, interpolation, vanillaPlus
 from views import sheets
 import os, copy, string
+from lib.cells.colorCell import RFColorCell
 
 import cProfile, pstats, io
 from pstats import SortKey
@@ -1574,68 +1575,57 @@ class PropertiesGroup(Group):
         super().__init__(posSize)
         self.RCJKI = RCJKI
         self.controller = controller
-        self.glyphState = PopUpButton(
-            (5, 5, -100, 20),
-            [
-            "In Progress", 
-            "Checking round 1", 
-            "Checking round 2", 
-            "Checking round 3", 
-            "Done"
-            ],
-            callback = self.glyphStateCallback
+        
+        x = RFColorCell.alloc().init()
+        x._callback = self.stub
+        listRFColorCell = RFColorCell.alloc().init()
+        columnDescriptions = [
+            dict(title="color", key="color", cell=listRFColorCell, width=80),
+            dict(title="sourceName", key="sourceName", editable=False, width=150),
+            dict(title="status", cell=PopUpButtonListCell(colors.names), binding="selectedValue")
+            ]
+
+        self.glyphStatusList = List((5, 5, -5, -25), [], 
+            columnDescriptions=columnDescriptions,
+            editCallback = self.glyphStatusListEditCallback
             )
 
-        self.glyphStateColor = ColorWell(
-            (-100, 5, -5, 20)
-            )
-        self.glyphStateColor.getNSColorWell().setBordered_(False)
+    def stub(self, obj):
+        self.glyphColorWell.getNSColorWell().performClick_(self)
+
+    @lockedProtect
+    def glyphStatusListEditCallback(self, sender):
+        sel = sender.getSelection()
+        if not sel: return
+        status = sender.get()[sel[0]]["status"]
+        sourceName = sender.get()[sel[0]]["sourceName"]
+        colorindex = 0
+        for i, color in enumerate(colors.colors):
+            if color.name == status:
+                colorindex = i
+        if sourceName == "default":
+            self.RCJKI.currentGlyph._status = colorindex
+        else:
+            for v in self.RCJKI.currentGlyph._glyphVariations:
+                if v.sourceName == sourceName:
+                    v.status = colorindex
+        self.setglyphState()
 
     def setglyphState(self):
-        color = self.RCJKI.currentGlyph.markColor
-        state = self.glyphState
-        if color is None:
-            state.set(0)
-        elif color == INPROGRESS:
-            state.set(0)
-        elif color == CHECKING1:
-            state.set(1)
-        elif color == CHECKING2:
-            state.set(2)
-        elif color == CHECKING3:
-            state.set(3)
-        elif color == DONE:
-            state.set(4)
-        else:
-            state.set(0)
-        self.setGlyphStateUI(state)
+        l = [
+            dict(color = NSColor.colorWithCalibratedRed_green_blue_alpha_(*colors.colors[self.RCJKI.currentGlyph._status].rgba), 
+                sourceName = "default", 
+                status = colors.names[self.RCJKI.currentGlyph._status]
+                )
+        ]
+        for source in self.RCJKI.currentGlyph._glyphVariations:
+            l.append(dict(color = NSColor.colorWithCalibratedRed_green_blue_alpha_(*colors.colors[source.status].rgba), 
+                        sourceName = source.sourceName, 
+                        status = colors.names[source.status]
+                        ))
 
-    def setGlyphStateUI(self, sender):
-        state = sender.getItem()
-        names = {
-            "In Progress":colors.WIP_name, 
-            "Checking round 1":colors.CHECKING1_name, 
-            "Checking round 2":colors.CHECKING2_name, 
-            "Checking round 3":colors.CHECKING3_name, 
-            "Done":colors.DONE_name
-            }
-        self.glyphStateColor.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(*colors.STATUS_COLORS[names[state]]))
+        self.glyphStatusList.set(l)
 
-    def glyphStateCallback(self, sender):
-        state = sender.getItem()
-        names = {
-            "In Progress":colors.WIP_name, 
-            "Checking round 1":colors.CHECKING1_name, 
-            "Checking round 2":colors.CHECKING2_name, 
-            "Checking round 3":colors.CHECKING3_name, 
-            "Done":colors.DONE_name
-            }
-        self.RCJKI.currentFont.markGlyph(self.RCJKI.currentGlyph.name, colors.STATUS_COLORS[names[state]], names[state])
-        # self.RCJKI.currentGlyph.markColor = colors.STATUS_COLORS[names[state]]
-        # self.RCJKI.currentFont.changeGlyphState(state = names[state], glyph = self.RCJKI.currentGlyph)
-        if colors.STATUS_COLORS[names[state]] == DONE and self.RCJKI.currentGlyph.type == "characterGlyph":
-            self.RCJKI.decomposeGlyphToBackupLayer(self.RCJKI.currentGlyph)
-        self.glyphStateColor.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(*colors.STATUS_COLORS[names[state]]))
 
 class TransformationGroup(Group):
 
@@ -1901,7 +1891,7 @@ class CharacterGlyphInspector(Inspector):
                        dict(label="Deep component axes", view=self.deepComponentAxesItem, minSize=100, size=150, collapsed=False, canResize=True),
                        dict(label="Deep component list", view=self.deepComponentListItem, minSize=100, size=150, collapsed=False, canResize=True),
                        dict(label="Transformation", view=self.transformationItem, minSize = 80, size=160, collapsed=False, canResize=True),
-                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=80, collapsed=False, canResize=True),
+                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=150, collapsed=False, canResize=True),
                        ]
 
         self.w.accordionView = AccordionView((0, 0, -0, -0), descriptions)
@@ -1937,7 +1927,7 @@ class DeepComponentInspector(Inspector):
                        dict(label="Atomic element axes", view=self.deepComponentAxesItem, minSize=100, size=150, collapsed=False, canResize=True),
                        dict(label="Atomic element list", view=self.deepComponentListItem, minSize=100, size=150, collapsed=False, canResize=True),
                        dict(label="Transformation", view=self.transformationItem, minSize = 80, size=160, collapsed=False, canResize=True),
-                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=80, collapsed=False, canResize=True),
+                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=150, collapsed=False, canResize=True),
                        
                        ]
 
@@ -1969,7 +1959,7 @@ class AtomicElementInspector(Inspector):
                        dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=150, collapsed=False, canResize=True),
 
                        # dict(label="Atomic element axes", view=self.glyphVariationAxesItem, minSize=100, size=170, collapsed=False, canResize=True),
-                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=80, collapsed=False, canResize=True)
+                       dict(label="Properties", view=self.propertiesItem, minSize = 80, size=150, collapsed=False, canResize=True)
                        ]
 
         self.w.accordionView = AccordionView((0, 0, -0, -0), descriptions)

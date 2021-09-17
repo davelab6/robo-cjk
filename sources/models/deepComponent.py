@@ -227,6 +227,7 @@ class DeepComponent(Glyph):
                     variationGlyphs = lib[variationGlyphsKey]
                 hasAxisKey = axesKey in lib.keys()
                 axes = lib.get(axesKey)
+                status = lib.get(statusKey, 0)
             else:
                 if variationGlyphsKey not in self._RGlyph.lib.keys():
                     deepComponents = self._RGlyph.lib[deepComponentsKey]
@@ -236,10 +237,12 @@ class DeepComponent(Glyph):
                     variationGlyphs = self._RGlyph.lib[variationGlyphsKey]
                 hasAxisKey = axesKey in self._RGlyph.lib.keys()
                 axes = self._RGlyph.lib.get(axesKey)
+                status = self._RGlyph.lib.get(statusKey, 0)
             if hasAxisKey:
                 self._deepComponents = DeepComponents(deepComponents)
                 self._axes = Axes(axes)
                 self._glyphVariations = VariationGlyphs(variationGlyphs, self._axes)
+                self._status = status
             else:
                 self._deepComponents = DeepComponents()
                 self._deepComponents._init_with_old_format(deepComponents)
