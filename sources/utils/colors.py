@@ -19,12 +19,12 @@ along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 
 class Color:
 
-	def __init__(self, name, rgba):
-		self.rgba = rgba
-		self.name = name
+    def __init__(self, name, rgba):
+        self.rgba = rgba
+        self.name = name
 
-	def __repr__(self):
-		return self.name
+    def __repr__(self):
+        return self.name
 
 INPROGRESS = (1., 0., 0., 1.)
 CHECKING1 = (1., .5, 0., 1.)
@@ -44,13 +44,13 @@ colorsvalues = [INPROGRESS, CHECKING1, CHECKING2, CHECKING3, DONE]
 
 colors = []
 for name, rgba in zip(names, colorsvalues):
-	colors.append(Color(name, rgba))
+    colors.append(Color(name, rgba))
 
 STATUS_COLORS = {
-	TODO_name: INPROGRESS, 
-	WIP_name: INPROGRESS, 
-	CHECKING1_name: CHECKING1,
-	CHECKING2_name: CHECKING2,
-	CHECKING3_name: CHECKING3,
-	DONE_name: DONE,
-	}
+    TODO_name: INPROGRESS, 
+    WIP_name: INPROGRESS, 
+    CHECKING1_name: CHECKING1,
+    CHECKING2_name: CHECKING2,
+    CHECKING3_name: CHECKING3,
+    DONE_name: DONE,
+    }
