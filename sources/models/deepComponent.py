@@ -250,7 +250,7 @@ class DeepComponent(Glyph):
                 self._axes._init_with_old_format(variationGlyphs)
                 self._glyphVariations = VariationGlyphs()
                 self._glyphVariations._init_with_old_format(variationGlyphs, self._axes)
-            self._temp_set_Status_value()
+            # self._temp_set_Status_value()
         except Exception as e:
             self._deepComponents = DeepComponents()
             self._axes = Axes()  

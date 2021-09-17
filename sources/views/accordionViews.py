@@ -1577,7 +1577,6 @@ class PropertiesGroup(Group):
         self.controller = controller
         
         x = RFColorCell.alloc().init()
-        x._callback = self.stub
         listRFColorCell = RFColorCell.alloc().init()
         columnDescriptions = [
             dict(title="color", key="color", cell=listRFColorCell, width=80),
@@ -1589,9 +1588,6 @@ class PropertiesGroup(Group):
             columnDescriptions=columnDescriptions,
             editCallback = self.glyphStatusListEditCallback
             )
-
-    def stub(self, obj):
-        self.glyphColorWell.getNSColorWell().performClick_(self)
 
     @lockedProtect
     def glyphStatusListEditCallback(self, sender):

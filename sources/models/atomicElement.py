@@ -151,7 +151,7 @@ class AtomicElement(Glyph):
                 self._axes._init_with_old_format(dict(self._RGlyph.lib[variationGlyphsKey]))
                 self._glyphVariations = VariationGlyphs()
                 self._glyphVariations._init_with_old_format(dict(self._RGlyph.lib[variationGlyphsKey]), self._axes)
-        self._temp_set_Status_value()
+        # self._temp_set_Status_value()
 
     def addGlyphVariation(self, newAxisName, newLayerName):
         self._axes.addAxis({"name":newAxisName, "minValue":0, "maxValue":1})
