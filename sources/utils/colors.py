@@ -17,6 +17,15 @@ You should have received a copy of the GNU General Public License
 along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+class Color:
+
+	def __init__(self, name, rgba):
+		self.rgba = rgba
+		self.name = name
+
+	def __repr__(self):
+		return self.name
+
 INPROGRESS = (1., 0., 0., 1.)
 CHECKING1 = (1., .5, 0., 1.)
 CHECKING2 = (1., 1., 0., 1.)
@@ -29,6 +38,13 @@ CHECKING1_name = 'checking-1'
 CHECKING2_name = 'checking-2'
 CHECKING3_name = 'checking-3'
 DONE_name = 'done'
+
+names = [WIP_name, CHECKING1_name, CHECKING2_name, CHECKING3_name, DONE_name]
+colorsvalues = [INPROGRESS, CHECKING1, CHECKING2, CHECKING3, DONE]
+
+colors = []
+for name, rgba in zip(names, colorsvalues):
+	colors.append(Color(name, rgba))
 
 STATUS_COLORS = {
 	TODO_name: INPROGRESS, 

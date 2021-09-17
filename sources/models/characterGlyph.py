@@ -45,6 +45,7 @@ glyphVariationsKey = 'robocjk.fontVariationGlyphs'
 deepComponentsKey = 'robocjk.deepComponents'
 axesKey = 'robocjk.axes'
 variationGlyphsKey = 'robocjk.variationGlyphs'
+statusKey = 'robocjk.status'
 
 import cProfile, pstats, io
 from pstats import SortKey
@@ -286,6 +287,7 @@ class CharacterGlyph(Glyph):
                 self._axes._init_with_old_format(variationGlyphs)
                 self._glyphVariations = VariationGlyphs()
                 self._glyphVariations._init_with_old_format(variationGlyphs, self._axes)
+            self._temp_set_Status_value()
         except Exception as e:
             self._deepComponents = DeepComponents()
             self._axes = Axes()   
@@ -388,5 +390,6 @@ class CharacterGlyph(Glyph):
         lib[deepComponentsKey] = self._deepComponents.getList()
         lib[axesKey] = self._axes.getList()
         lib[variationGlyphsKey] = self._glyphVariations.getList()
+        lib[statusKey] = self._status
         self.lib.update(lib)
         self.markColor = color

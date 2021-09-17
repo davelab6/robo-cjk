@@ -41,6 +41,7 @@ glyphVariationsKey = 'robocjk.glyphVariationGlyphs'
 # Actual key
 axesKey = 'robocjk.axes'
 variationGlyphsKey = 'robocjk.variationGlyphs'
+statusKey = 'robocjk.status'
 
 class CustomMathGlyph(mathGlyph.MathGlyph):
 
@@ -149,6 +150,7 @@ class AtomicElement(Glyph):
                 self._axes._init_with_old_format(dict(self._RGlyph.lib[variationGlyphsKey]))
                 self._glyphVariations = VariationGlyphs()
                 self._glyphVariations._init_with_old_format(dict(self._RGlyph.lib[variationGlyphsKey]), self._axes)
+        self._temp_set_Status_value()
 
     def addGlyphVariation(self, newAxisName, newLayerName):
         self._axes.addAxis({"name":newAxisName, "minValue":0, "maxValue":1})
@@ -183,6 +185,7 @@ class AtomicElement(Glyph):
         # lib[glyphVariationsKey] = self._glyphVariations.getList()
         lib[axesKey] = self._axes.getList()
         lib[variationGlyphsKey] = self._glyphVariations.getList(exception=["sourceName"])
+        lib[statusKey] = self._status
 
         self.lib.update(lib)
         self.markColor = color

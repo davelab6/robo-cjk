@@ -26,6 +26,7 @@ from models import deepComponent, component
 # reload(component)
 import copy
 import math
+from utils import colors
 # from fontTools.misc.transform import Transform
 
 # reload(deepComponent)
@@ -91,6 +92,7 @@ class Glyph(RGlyph):
         super().__init__()
         self.type = None
         self._RFont = None
+        self._status = 0
         # self.preview = None
         self.sourcesList = []
         self._designState = ""
@@ -105,7 +107,20 @@ class Glyph(RGlyph):
         self._glyphVariations = VariationGlyphs()
         self.previewLocationsStore = {}
 
-        # self.frozenPreview = []
+    def _temp_set_Status_value(self):
+        mark = self._RGlyph.markColor
+        marked = False
+        for i, color in enumerate(colors.colors):
+            if mark == color.rgba:
+                self._status = i
+                for v in self._glyphVariations:
+                    v.status = i
+                marked = True
+
+        if not marked:
+            self._status = 0
+            for v in self._glyphVariations:
+                v.status = 0
 
     def createPreviewLocationsStore(self):
         # print('locations', self.locations)
