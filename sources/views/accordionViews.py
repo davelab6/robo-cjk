@@ -715,7 +715,7 @@ class AxisSheet:
             if minvalue > maxvalue:
                 self.w.minValue.set(defaultvalue)
         elif sender == self.w.maxValue:
-            if maxvalue < minvalue
+            if maxvalue < minvalue:
                 self.w.maxValue.set(defaultvalue)
         else:
             if not minvalue <= defaultvalue <= maxvalue:
@@ -786,7 +786,7 @@ class ModifyAxisSheet:
             if minvalue > maxvalue:
                 self.w.minValue.set(defaultvalue)
         elif sender == self.w.maxValue:
-            if maxvalue < minvalue
+            if maxvalue < minvalue:
                 self.w.maxValue.set(defaultvalue)
         else:
             if not minvalue <= defaultvalue <= maxvalue:
