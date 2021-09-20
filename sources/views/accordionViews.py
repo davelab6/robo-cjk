@@ -711,10 +711,17 @@ class AxisSheet:
         maxvalue = str_to_int_or_float(self.w.maxValue.get())
         defaultvalue = str_to_int_or_float(self.w.defaultValue.get())
 
-        print(minvalue, maxvalue, defaultvalue)
-
-        if not min([minvalue, maxvalue]) <= defaultvalue <= max([minvalue, maxvalue]):
-            self.w.defaultValue.set(minvalue)
+        if sender == self.w.minValue:
+            if minvalue > maxvalue:
+                self.w.minValue.set(defaultvalue)
+        elif sender == self.w.maxValue:
+            if maxvalue < minvalue
+                self.w.maxValue.set(defaultvalue)
+        else:
+            if not minvalue <= defaultvalue <= maxvalue:
+                self.w.defaultValue.set(minvalue)
+            # if not min([minvalue, maxvalue]) <= defaultvalue <= max([minvalue, maxvalue]):
+            #     self.w.defaultValue.set(minvalue)
 
     def applyCallback(self, sender):
         if self.glyphType != "characterGlyph":
@@ -754,13 +761,13 @@ class ModifyAxisSheet:
         self.w = Sheet((300, 200), parentWindow)
 
         self.w.minValueTitle = TextBox((10, 10, 100, 20), "minValue", sizeStyle='small')
-        self.w.minValue = EditText((110, 10, 100, 20), axisList["MinValue"], sizeStyle='small')
+        self.w.minValue = EditText((110, 10, 100, 20), axisList["MinValue"], sizeStyle='small', callback=self.valueCallback)
 
         self.w.maxValueTitle = TextBox((10, 40, 100, 20), "maxValue", sizeStyle='small')
-        self.w.maxValue = EditText((110, 40, 100, 20), axisList["MaxValue"], sizeStyle='small')
+        self.w.maxValue = EditText((110, 40, 100, 20), axisList["MaxValue"], sizeStyle='small', callback=self.valueCallback)
 
         self.w.defaultValueTitle = TextBox((10, 70, 100, 20), "defaultValue", sizeStyle='small')
-        self.w.defaultValue = EditText((110, 70, 100, 20), axisList["DefaultValue"], sizeStyle='small')
+        self.w.defaultValue = EditText((110, 70, 100, 20), axisList["DefaultValue"], sizeStyle='small', callback=self.valueCallback)
 
         self.changeDesignSpace = 1
         self.w.changeDesignSpaceCheckBox = CheckBox((10, -50, -10, 20), "Designspace range follows axis ranges", value = self.changeDesignSpace, callback = self.changeDesignSpaceCallback, sizeStyle="small")
@@ -769,6 +776,23 @@ class ModifyAxisSheet:
         self.w.apply = Button((150, -20, 150, 20), "apply", sizeStyle = "small", callback = self.applyCallback)
         self.w.setDefaultButton(self.w.apply)
         self.w.open()
+
+    def valueCallback(self, sender):
+        minvalue = str_to_int_or_float(self.w.minValue.get())
+        maxvalue = str_to_int_or_float(self.w.maxValue.get())
+        defaultvalue = str_to_int_or_float(self.w.defaultValue.get())
+
+        if sender == self.w.minValue:
+            if minvalue > maxvalue:
+                self.w.minValue.set(defaultvalue)
+        elif sender == self.w.maxValue:
+            if maxvalue < minvalue
+                self.w.maxValue.set(defaultvalue)
+        else:
+            if not minvalue <= defaultvalue <= maxvalue:
+                self.w.defaultValue.set(minvalue)
+            # if not min([minvalue, maxvalue]) <= defaultvalue <= max([minvalue, maxvalue]):
+            #     self.w.defaultValue.set(minvalue)
 
     def changeDesignSpaceCallback(self, sender):
         self.changeDesignSpace = sender.get()
