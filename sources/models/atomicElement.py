@@ -171,7 +171,7 @@ class AtomicElement(Glyph):
         self._axes.removeAxis(index)
 
     def save(self):
-        color = self.markColor
+        # color = self.markColor
         self.lib.clear()
         lib = RLib()
         
@@ -186,7 +186,11 @@ class AtomicElement(Glyph):
         # lib[glyphVariationsKey] = self._glyphVariations.getList()
         lib[axesKey] = self._axes.getList()
         lib[variationGlyphsKey] = self._glyphVariations.getList(exception=["sourceName"])
-        lib[statusKey] = self._status
-
+        if self._status:
+            lib[statusKey] = self._status
+        if 'public.markColor' in lib:
+            del lib['public.markColor']
         self.lib.update(lib)
-        self.markColor = color
+        if 'public.markColor' in self.lib:
+            del self.lib['public.markColor']
+        # self.markColor = color

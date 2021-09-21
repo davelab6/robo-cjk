@@ -534,7 +534,10 @@ class VariationGlyphsInfos:
         # return f"<location: {self.location}, layerName: {self.layerName}, deepComponent: {self.deepComponents}>"
 
     def _toDict(self, exception = []):
-        d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on, "status":self.status}
+        if self.status:
+            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on, "status":self.status}
+        else:
+            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on}
         for e in exception:
             if e in d:
                 del d[e]
