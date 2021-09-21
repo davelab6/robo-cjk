@@ -88,7 +88,7 @@ class AtomicElement(Glyph):
         # print(position)
         # print("AE %s position"%self.name, position, "\n")
         position = self.normalizedValueToMinMaxValue(position, self)
-        # position = self._clampLocation(position)
+        position = self._clampLocation(position)
         # for k in position:
         #     if position[k] > 1:
         #         position[k] = 1
