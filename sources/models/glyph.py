@@ -149,9 +149,6 @@ class Glyph(RGlyph):
         else:
             return bool(self._glyphVariations)
 
-    def normalizedValue(self, v, minv, maxv, defaultValue):
-        return (v-defaultValue)/(maxv-minv)
-
     def getLocation(self):
         loc = {}
         if self.selectedSourceAxis:
@@ -166,6 +163,22 @@ class Glyph(RGlyph):
     @property
     def locations(self):
         return self._locations()
+
+    def normalizedValue(self, v, minv, maxv, defaultValue):
+        return (v-defaultValue)/(maxv-minv)
+
+    def normalizedValueToMinMaxValue_clamped(self, loc, g):
+        position = {}
+        for k, v in loc.items():
+            axis = g._axes.get(k)
+            if axis is not None:
+                vx = self.normalizedValue(v, axis.minValue, axis.maxValue, axis.defaultValue)
+                if vx > axis.maxValue:
+                    vx = axis.maxValue
+                elif vx < axis.minValue:
+                    vx = axis.minValue
+                position[k] = vx
+        return position
 
     def normalizedValueToMinMaxValue(self, loc, g):
         position = {}

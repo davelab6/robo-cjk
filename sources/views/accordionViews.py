@@ -769,7 +769,7 @@ class ModifyAxisSheet:
         self.w.defaultValueTitle = TextBox((10, 70, 100, 20), "defaultValue", sizeStyle='small')
         self.w.defaultValue = EditText((110, 70, 100, 20), axisList["DefaultValue"], sizeStyle='small', callback=self.valueCallback)
 
-        self.changeDesignSpace = 1
+        self.changeDesignSpace = 0
         self.w.changeDesignSpaceCheckBox = CheckBox((10, -50, -10, 20), "Designspace range follows axis ranges", value = self.changeDesignSpace, callback = self.changeDesignSpaceCallback, sizeStyle="small")
 
         self.w.cancel = Button((0, -20, 150, 20), "cancel", sizeStyle = "small", callback = self.cancelCallback)
@@ -781,6 +781,9 @@ class ModifyAxisSheet:
         minvalue = str_to_int_or_float(self.w.minValue.get())
         maxvalue = str_to_int_or_float(self.w.maxValue.get())
         defaultvalue = str_to_int_or_float(self.w.defaultValue.get())
+
+        if None in [minvalue, maxvalue, defaultvalue]:
+            return
 
         if sender == self.w.minValue:
             if minvalue > maxvalue:
