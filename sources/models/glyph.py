@@ -172,11 +172,11 @@ class Glyph(RGlyph):
         for k, v in loc.items():
             axis = g._axes.get(k)
             if axis is not None:
+                if v > axis.maxValue:
+                    v = axis.maxValue
+                elif v < axis.minValue:
+                    v = axis.minValue
                 vx = self.normalizedValue(v, axis.minValue, axis.maxValue, axis.defaultValue)
-                if vx > axis.maxValue:
-                    vx = axis.maxValue
-                elif vx < axis.minValue:
-                    vx = axis.minValue
                 position[k] = vx
         return position
 
@@ -210,34 +210,32 @@ class Glyph(RGlyph):
         return self._RGlyph.components
 
     def update(self):
-        return #should readapt this fonction to the new format
         if self.type == 'atomicElement':
             return
         deepComponentToRemove = []
-        glyphset = set(self.currentFont.glyphSet())
-        # print("self._glyphVariations before update", self._deepComponents)
+        # glyphset = set(self.currentFont.glyphSet())
+        glyphset = self.currentFont.staticCharacterGlyphSet() | self.currentFont.staticDeepComponentSet() | self.currentFont.staticAtomicElementSet()
         for index, deepComponent in enumerate(self._deepComponents):
-            if set([deepComponent.name]) - glyphset:
+            if set([deepComponent["name"]]) - glyphset:
                 deepComponentToRemove.append(index)
             else:
-                deepComponentGlyph = self.currentFont[deepComponent.name]
-                deepComponentGlyphAxes = set(deepComponentGlyph._glyphVariations.axes)
+                deepComponentGlyph = self.currentFont[deepComponent["name"]]
+                deepComponentGlyphAxes = deepComponentGlyph._axes
+                axesTodel = [x for x in deepComponent["coord"] if x not in deepComponentGlyphAxes.names]
 
-                # remove old axes in both deepComponent and variationGlyph
-                todel = set(deepComponent.coord.axes) - deepComponentGlyphAxes
-                for oldAxis in todel:
-                    deepComponent.coord.remove(oldAxis)
-                    for glyphVariation in self._glyphVariations.infos:
-                        glyphVariation.content.deepComponents[index].coord.remove(oldAxis)
+                for oldAxis in axesTodel:
+                    self._deepComponents[index].coord.remove(oldAxis)
+                    for glyphVariation in self._glyphVariations:
+                        glyphVariation.deepComponents[index].coord.remove(oldAxis)
 
-                # add new axes to both deepComponent and variationGlyph
-                toadd = deepComponentGlyphAxes - set(deepComponent.coord)
-                for axis in toadd:
-                    deepComponent.coord.add(axis, 0)
-                    for glyphVariation in self._glyphVariations.infos:
-                        glyphVariation.content.deepComponents[index].coord.add(axis, 0)
+                axesToadd = [x for x in deepComponentGlyphAxes if x.name not in deepComponent["coord"]]
+                for axis in axesToadd:
+                    self._deepComponents[index].coord.add(axis.name, axis.defaultValue)
+                    for glyphVariation in self._glyphVariations:
+                        glyphVariation.deepComponents[index].coord.add(axis.name, axis.defaultValue)
 
-        self.removeDeepComponents(deepComponentToRemove)
+        #commenté juste par sécurité
+        #self.removeDeepComponents(deepComponentToRemove)
 
     def renameDeepComponent(self, index, newName):
         currentCoords = list(self._deepComponents[index]["coord"].keys())
@@ -284,7 +282,7 @@ class Glyph(RGlyph):
 
     def addAxis(self, axisName="", minValue="", maxValue="", defaultValue =""):
         self._axes.addAxis(dict(name = axisName, minValue = minValue, maxValue = maxValue, defaultValue = defaultValue))
-        self._glyphVariations.addAxisToLocations(axisName = axisName, minValue=minValue)
+        self._glyphVariations.addAxisToLocations(axisName = axisName, defaultValue=defaultValue)
 
     def removeAxis(self, index):
         axisName = self._axes[index].name
@@ -292,7 +290,7 @@ class Glyph(RGlyph):
         self._glyphVariations.removeAxis(axisName)
         self._glyphVariations.desactivateDoubleLocations(self._axes)
 
-    def addSource(self, sourceName="", location={}, layerName = "", copyFrom = ""):
+    def addSource(self, sourceName="", location={}, layerName = "", copyFrom = "", width = 1000):
 
         deepComponents = []
         if self.type != "atomicElement":
@@ -306,7 +304,7 @@ class Glyph(RGlyph):
                     if k != "name":
                         items[k] = v
                 deepComponents.append(items)
-        self._glyphVariations.addVariation(dict(sourceName=sourceName, location=location, layerName=layerName, deepComponents = deepComponents), self._axes)
+        self._glyphVariations.addVariation(dict(sourceName=sourceName, location=location, layerName=layerName, deepComponents = deepComponents, width = width), self._axes)
 
     def removeSource(self, selectedAxisIndex):
         self._glyphVariations.removeVariation(selectedAxisIndex)

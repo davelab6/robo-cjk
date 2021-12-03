@@ -229,6 +229,9 @@ class Coord(DictClass):
         """
         delattr(self, axis)
 
+    def setValue(self, axis, value):
+        self[axis] = value
+
     @property
     def axes(self):
         """
@@ -271,6 +274,9 @@ class Transform(DictClass):
                 self.tcenterx = v
             elif k == "rcentery":
                 self.tcentery = v
+
+    def setValue(self, transform, value):
+        self[transform] = value
 
     def _normalizeRotation(self, rotation):
         r = rotation
@@ -472,13 +478,14 @@ class DeepComponents:
 
 class VariationGlyphsInfos:
 
-    def __init__(self, location: dict = {}, layerName: str = "", deepComponents: dict = {}, sourceName: str = "", on: bool = 1, status:int = 0, **kwargs):
+    def __init__(self, location: dict = {}, layerName: str = "", deepComponents: dict = {}, sourceName: str = "", on: bool = 1, status:int = 0, width:int = 1000, **kwargs):
         # print("_init_ variation glyphs", location, layerName, deepComponents)
         self.location = MathDict(location) #location is a dict specifiying the design space location {"wght":1, "wdth":1}
         self.layerName = layerName
         self.deepComponents = DeepComponents(deepComponents)
         self.sourceName = sourceName
         self.on = on
+        self.width = width
         self.status = status
         for k, v in kwargs.items():
             if k == "axisName":
@@ -535,9 +542,9 @@ class VariationGlyphsInfos:
 
     def _toDict(self, exception = []):
         if self.status:
-            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on, "status":self.status}
+            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on, "status":self.status, "width":self.width}
         else:
-            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on}
+            d = {"location":self.location, "layerName":self.layerName, "deepComponents":self.deepComponents.getList(), "sourceName":self.sourceName, "on":self.on, "width":self.width}
         for e in exception:
             if e in d:
                 del d[e]
@@ -571,9 +578,9 @@ class VariationGlyphs(list):
     #         # print(dir(x))
     #         yield x._toDict()
 
-    def addAxisToLocations(self, axisName="", minValue=0):
+    def addAxisToLocations(self, axisName="", defaultValue=0):
         for variation in self:
-            variation.location[axisName] = minValue
+            variation.location[axisName] = defaultValue
 
     def addVariation(self, variation, axes):
         loc = self._normalizedLocation(variation.get('location'), axes)

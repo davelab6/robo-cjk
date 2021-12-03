@@ -175,11 +175,13 @@ class Font():
         self.username = username
         self.client = client
         self.fontName = font["data"]["name"]
+        self._clientFont = font
         self._RFont = NewFont(
             familyName=self.fontName, 
             styleName='Regular', 
             showUI = False
             )
+        self._hiddenSavePath = hiddenSavePath
         savePath = os.path.join(hiddenSavePath, f"{self.fontName}.ufo")
         files.makepath(savePath)
         self._RFont.save(savePath)
@@ -597,7 +599,7 @@ class Font():
             if variation not in [x.name for x in self._RFont.layers]:
                 self._RFont.newLayer(variation)
 
-    def getmySQLGlyph(self, name, font = None):      
+    def getmySQLGlyph(self, name, font = None, exception = ""):      
         prev = self._mysqlInsertedGlyph.get(name, None)
         if prev is not None:
             now = time.time()
@@ -640,14 +642,21 @@ class Font():
         print("download glyphs:", stop-start, 'seconds to download %s'%name)
 
         start = time.time()
-        self.insertmysqlGlyph(glyph, name, BGlyph, font, gtype)
+    
+
         for ae in made_of_aes:
-            # print(ae)
-            glyph = atomicElement.AtomicElement(ae["name"])
-            self.insertmysqlGlyph(glyph, ae["name"], ae, font, gtype)
+            if ae["name"] == exception or ae["name"] in font.keys(): continue
+
+            glyph2 = atomicElement.AtomicElement(ae["name"])
+            self.insertmysqlGlyph(glyph2, ae["name"], ae, font, "AE")
         for dc in made_of_dcs:
-            glyph = deepComponent.DeepComponent(dc["name"])
-            self.insertmysqlGlyph(glyph, dc["name"], dc, font, gtype)
+            if dc["name"] == exception or dc["name"] in font.keys(): continue
+
+            glyph2 = deepComponent.DeepComponent(dc["name"])
+            self.insertmysqlGlyph(glyph2, dc["name"], dc, font, "DC")
+
+        self.insertmysqlGlyph(glyph, name, BGlyph, font, gtype)
+
         stop = time.time()
         print("insert glyphs:", stop-start, 'seconds to insert %s'%str(1+len(made_of_aes+made_of_dcs)))
 
@@ -1049,6 +1058,7 @@ class Font():
         if self.glyphLockedBy(glyph) != self.lockerUserName: return
         name = glyph.name
         glyph.save()
+        glyph._RGlyph.clearGuides()
         rglyph = glyph._RGlyph
         rglyph.lib.update(glyph.lib)
         xml = rglyph.dumpToGLIF()

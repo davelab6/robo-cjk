@@ -298,7 +298,7 @@ class DeepComponent(Glyph):
             d = DeepComponentNamed(atomicElementName)
             dcglyph = self.currentFont[atomicElementName]
             for i, axis in enumerate(dcglyph._axes):
-                value = dcglyph._axes[i].minValue
+                value = dcglyph._axes[i].defaultValue
                 d.coord.add(axis.name, value)
         else:
             d = items
@@ -361,6 +361,9 @@ class DeepComponent(Glyph):
         lib[deepComponentsKey] = self._deepComponents.getList()
         lib[axesKey] = self._axes.getList()
         lib[variationGlyphsKey] = self._glyphVariations.getList(exception=["layerName"])
+        for i, v in enumerate(lib[variationGlyphsKey]):
+            if v["width"] == self._RGlyph.width:
+                del lib[variationGlyphsKey][i]["width"]
         if self._status:
             lib[statusKey] = self._status
         if 'public.markColor' in lib:

@@ -20,7 +20,7 @@ from vanilla import *
 from vanilla.dialogs import getFolder, putFile, askYesNo, message
 from mojo.canvas import Canvas
 from fontParts.ui import AskYesNoCancel, AskString
-from mojo.UI import OpenGlyphWindow, AllWindows, CurrentGlyphWindow, UpdateCurrentGlyphView, PostBannerNotification
+from mojo.UI import OpenGlyphWindow, AllWindows, CurrentGlyphWindow, UpdateCurrentGlyphView, PostBannerNotification, SetCurrentLayerByName
 from defconAppKit.windows.baseWindow import BaseWindowController
 from views import canvasGroups
 from mojo.canvas import CanvasGroup
@@ -46,6 +46,8 @@ from views import scriptingWindow
 from views import textCenter
 # reload(textCenter)
 
+from mojo.events import addObserver, removeObserver
+
 import os, json, copy, time
 
 # import BF_fontbook_struct as bfs
@@ -53,8 +55,10 @@ import os, json, copy, time
 
 gitCoverage = decorators.gitCoverage
 lockedProtect = decorators.lockedProtect
+refresh = decorators.refresh
 
 from mojo.roboFont import *
+from datetime import datetime
 import threading
 import queue
 
@@ -130,6 +134,7 @@ def openGlyphWindowIfLockAcquired(RCJKI, glyph):
     CurrentGlyphWindow().window().setPosSize(RCJKI.glyphWindowPosSize)
     RCJKI.openedGlyphName = glyph.name
     stop = time.time()
+    RCJKI.disabledEditingUIIfValidated()
     print(stop-start, 'to open a %s'%glyph.name)
 
 
@@ -543,7 +548,7 @@ class RoboCJKView(BaseWindowController):
         glyph = self.RCJKI.currentFont[name]
         lock, _ = f.lockGlyph(glyph)
         if not lock: 
-            self.setglyphState(l, glyph)
+            self.setglyphState(glyph, l)
             return
 
         status = sender.get()[sel[0]]["status"]
@@ -560,7 +565,7 @@ class RoboCJKView(BaseWindowController):
                     v.status = colorindex
 
         f.saveGlyph(glyph)
-        self.setglyphState(l, glyph)
+        self.setglyphState(glyph, l)
         self.RCJKI.unlockGlyphsNonOpen()
 
     def codeEditorButtonCallback(self, sender):
@@ -1341,7 +1346,7 @@ class RoboCJKView(BaseWindowController):
         preview_stop = time.time()
         print("calculate preview:", preview_stop-preview_start, "seconds to calculate preview of %s"%glyph.name)
         self.setGlyphToCanvas(sender, glyph)
-        self.setglyphState(sender, glyph)
+        self.setglyphState(glyph, sender)
         # if not self.RCJKI.mysql:
         #     user = self.RCJKI.currentFont.locker.potentiallyOutdatedLockingUser(self.currentFont[self.prevGlyphName])
         # else:
@@ -1354,7 +1359,14 @@ class RoboCJKView(BaseWindowController):
         stop = time.time()
         print("display glyph:", stop-start, 'seconds to display %s'%glyph.name)
 
-    def setglyphState(self, sender, glyph):
+    def setglyphState(self, glyph, sender=None):
+        if sender is None:
+            if glyph.type == "atomicElement":
+                sender = self.w.atomicElement
+            elif glyph.type == "deepComponent":
+                sender = self.w.deepComponent
+            else:
+                sender = self.w.characterGlyph
         l = [
             dict(color = NSColor.colorWithCalibratedRed_green_blue_alpha_(*colors.colors[glyph._status].rgba), 
                 sourceName = "default", 
@@ -1399,20 +1411,22 @@ class RoboCJKView(BaseWindowController):
         # self.w.characterGlyph.set(self.currentFont.characterGlyphSet)
 
     def newDeepComponentCallback(self, sender):
-        name = self.dumpName('deepComponent', self.currentFont.deepComponentSet)
-        self.currentFont.newGlyph('deepComponent', name)
-        # self.RCJKI.currentFont.locker.batchLock([self.RCJKI.currentFont[name]])
-        # self.RCJKI.currentFont.batchLockGlyphs([self.RCJKI.currentFont[name]])
-        self.w.deepComponent.setSelection([])
-        self.w.deepComponent.set(self.currentFont.deepComponentSet)
+        sheets.NewDeepComponent(self.RCJKI, self.w)
+        # name = self.dumpName('deepComponent', self.currentFont.deepComponentSet)
+        # self.currentFont.newGlyph('deepComponent', name)
+        # # self.RCJKI.currentFont.locker.batchLock([self.RCJKI.currentFont[name]])
+        # # self.RCJKI.currentFont.batchLockGlyphs([self.RCJKI.currentFont[name]])
+        # self.w.deepComponent.setSelection([])
+        # self.w.deepComponent.set(self.currentFont.deepComponentSet)
 
     def newAtomicElementCallback(self, sender):
-        name = self.dumpName('atomicElement', self.currentFont.atomicElementSet)
-        self.currentFont.newGlyph('atomicElement', name)
-        # self.RCJKI.currentFont.locker.batchLock([self.RCJKI.currentFont[name]])
-        # self.RCJKI.currentFont.batchLockGlyphs([self.RCJKI.currentFont[name]])
-        self.w.atomicElement.setSelection([])
-        self.w.atomicElement.set(self.currentFont.atomicElementSet)
+        sheets.NewAtomicElement(self.RCJKI, self.w)
+        # name = self.dumpName('atomicElement', self.currentFont.atomicElementSet)
+        # self.currentFont.newGlyph('atomicElement', name)
+        # # self.RCJKI.currentFont.locker.batchLock([self.RCJKI.currentFont[name]])
+        # # self.RCJKI.currentFont.batchLockGlyphs([self.RCJKI.currentFont[name]])
+        # self.w.atomicElement.setSelection([])
+        # self.w.atomicElement.set(self.currentFont.atomicElementSet)
 
     def duplicateAtomicElementCallback(self, sender):
         newGlyphName = self._duplicateGlyph(self.w.atomicElement, self.RCJKI.currentFont.staticAtomicElementSet())
@@ -1694,13 +1708,6 @@ class RoboCJKView(BaseWindowController):
         self.setGlyphToCanvas(self.w.characterGlyph, None)
         self.w.lockerInfoTextBox.set("")
 
-    def dumpName(self, glyphType, sets):
-        index = 0
-        while True:
-            name = "%s%s"%(glyphType, str(index).zfill(5))
-            if not name in sets:
-                return name
-            index+=1
 
 class ImportDeepComponentFromAnotherCharacterGlyph:
 
@@ -1792,3 +1799,199 @@ class ImportDeepComponentFromAnotherCharacterGlyph:
             self.index = None
             return
         self.index = sel[0]
+
+from fontTools.ufoLib.glifLib import readGlyphFromString
+
+class HistoryGlyph:
+
+    def __init__(self, RCJKI):
+        self.RCJKI = RCJKI
+        self.w = Window((300, 300), 'History Glyph')
+        self.w.saveStateButton = Button((0, 0, -0, 20), 'Save current glyph state', callback = self.saveStateButtonCallback)
+        self.w.historyTitle = TextBox((0, 30, -0, 20), 'History', alignment = 'center')
+        self.w.historyList = List((0, 50, -0, -60), self.glyphHistoryList)
+        self.w.restoreGlyphState = Button((0, -50, -0, 20), 'Restore glyph from selected state', callback = self.restoreGlyphStateCallback)
+        self.w.clearHistoryButton = Button((0, -20, -0, 20), 'Clear History', callback = self.clearHistoryButtonCallback)
+        self.w.open()
+
+
+    def close(self):
+        self.w.close()
+
+
+    @property
+    def glyphHistoryList(self):
+        if os.path.exists(self.glyphFolder):
+            return sorted(os.listdir(self.glyphFolder), reverse = True)
+        return []
+    
+
+    @property
+    def glyphFolder(self):
+        return "/".join([self.RCJKI.currentFont._hiddenSavePath, "%s-%s"%(self.RCJKI.currentFont.uid, self.RCJKI.currentFont._clientFont["data"]["name"]), self.RCJKI.currentGlyph.type, self.RCJKI.currentGlyph.name])    
+
+
+    def storingHistoryGlyphPath(self, glyph):
+        now = str(datetime.now()).replace(" ", "_").replace(":", "-").split(".")[0]
+        path = "/".join([self.glyphFolder, "%s__%s.glif"%(now, glyph.name)])
+        return path 
+
+
+    def saveStateButtonCallback(self, sender):
+        currentGlyph = self.RCJKI.currentGlyph
+        if currentGlyph is None: return
+        storingpath = self.storingHistoryGlyphPath(currentGlyph)
+        files.makepath(storingpath)
+        currentGlyph.save()
+        data = currentGlyph._RGlyph.dumpToGLIF()
+        with open(storingpath, 'w', encoding = 'utf-8') as file:
+            file.write(data)
+        self.w.historyList.set(self.glyphHistoryList)
+
+
+    @refresh
+    def restoreGlyphStateCallback(self, sender):
+        sel = self.w.historyList.getSelection()
+        if not sel: return
+        message = 'Are you sure to restore this glyph?'
+        answer = AskYesNoCancel(
+            message, 
+            title='restore glyph?', 
+            default=-1, 
+            informativeText="This action is not undoable",
+            )
+        if answer != 1: return
+
+        file = self.w.historyList.get()[sel[0]]
+        path = "/".join([self.glyphFolder, file])
+        with open(path, 'r', encoding = 'utf-8') as file:
+            string = file.read()
+        rGlyph = RGlyph()
+        pen = rGlyph.naked().getPointPen()
+        readGlyphFromString(string, rGlyph.naked(), pen)
+
+        self.RCJKI.currentGlyph._RGlyph.lib.update(rGlyph.lib)
+
+        self.RCJKI.currentGlyph._initWithLib(rGlyph.lib)
+        self.RCJKI.currentGlyph.update()
+
+        self.RCJKI.updateDeepComponent(update = False)
+        self.RCJKI.currentGlyph.redrawSelectedElementSource = True
+        self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
+        self.RCJKI.currentGlyph.reinterpolate = True
+
+        self.RCJKI.disabledEditingUIIfValidated()
+
+        self.RCJKI.glyphInspectorWindow.axesItem.setList()
+        self.RCJKI.glyphInspectorWindow.sourcesItem.setList()
+        self.RCJKI.glyphInspectorWindow.deepComponentListItem.setList()
+        self.RCJKI.glyphInspectorWindow.propertiesItem.setglyphState()
+        
+
+    def clearHistoryButtonCallback(self, sender):
+        message = 'Are you sure to clear glyph history?'
+        answer = AskYesNoCancel(
+            message, 
+            title='Glyph history', 
+            default=-1, 
+            informativeText="This action is not undoable",
+            )
+        if answer != 1: return
+        for file in self.glyphHistoryList:
+            path = "/".join([self.glyphFolder, file])
+            os.remove(path)
+        self.w.historyList.set(self.glyphHistoryList)
+
+
+def update(func):
+    def wrapper(self, *args, **kwargs):
+        func(self, *args, **kwargs)
+        UpdateCurrentGlyphView()
+    return wrapper
+
+
+class CharacterGlyphViewer:
+
+
+    def __init__(self, RCJKI):
+        self.RCJKI = RCJKI
+        self.currentFont = self.RCJKI.currentFont
+        self.currentGlyphName = self.RCJKI.currentGlyph.name
+        self.selectedGlyph = None
+        self.interpovalues = {}
+        self.glyphList = sorted([x["name"] for x in self.currentFont.client.deep_component_get(self.currentFont.uid, self.currentGlyphName)["data"]["used_by"]])
+
+        self.w = FloatingWindow((300, 300), "Character Glyph Viewer")
+        self.w.glyphList = List((10, 10, 100, -10), 
+            self.glyphList, 
+            selectionCallback = self.glyphListSelectionCallback, 
+            drawFocusRing = False)
+        self.w.glyphList.setSelection([])
+        self.w.axes = List((110, 10, -10, 200), 
+            [], 
+            columnDescriptions=[{"title": "axes", "width":40}, {"title": "values", "cell": SliderListCell()}], 
+            editCallback = self.axesEditCallback, 
+            drawFocusRing = False)
+        self.observer()
+        self.w.open()
+        self.w.bind("close", self.windowWillClose)
+
+    def close(self):
+        self.w.close()
+
+    @update
+    def axesEditCallback(self, sender):
+        for e in sender.get():
+            axis = self.selectedGlyph._axes.get(e["axes"])
+            if e.get("values"):
+                value = axis.minValue + (axis.maxValue-axis.minValue)*int(e["values"])/100 
+            else:
+                value = axis.defaultValue
+            self.interpovalues[axis.name] = value
+
+
+    @update
+    def windowWillClose(self, sender):
+        self.observer(remove = True)
+
+
+    def observer(self, remove = False):
+        if not remove:
+            addObserver(self, "drawBackground", "drawBackground")
+            addObserver(self, "drawBackground", "drawInactive")
+            return
+        removeObserver(self, "drawBackground")
+        removeObserver(self, "drawInactive")
+
+
+    def drawBackground(self, info):
+        if self.selectedGlyph is None: return
+        g = self.selectedGlyph
+        mjdt.save()
+        mjdt.fill(1,0,1,.8)
+        mjdt.stroke(0,0,0,0)
+        g.createPreviewLocationsStore()
+        preview = g.preview(self.interpovalues)
+        for i, element in enumerate(preview):
+            mjdt.save()
+            mjdt.translate(element.transformation["x"], element.transformation["y"])
+            mjdt.scale(element.transformation["scalex"], element.transformation["scaley"])
+            mjdt.drawGlyph(element.resultGlyph)
+            mjdt.restore()
+        mjdt.restore()
+
+
+    @update
+    def glyphListSelectionCallback(self, sender):
+        sel = sender.getSelection()
+        print(sel)
+        if not sel:
+            self.selectedGlyph = None
+            return
+        selectedGlyphName = sender.get()[sel[0]]
+        self.RCJKI.currentFont.getmySQLGlyph(selectedGlyphName, exception = self.currentGlyphName)
+        self.selectedGlyph = self.RCJKI.currentFont[selectedGlyphName]
+        l = [{"axes": x.name, "values": x.defaultValue} for x in self.selectedGlyph._axes]
+        self.w.axes.set(l)
+
+
