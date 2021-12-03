@@ -100,7 +100,7 @@ from utils import decorators
 refresh = decorators.refresh
 lockedProtect = decorators.lockedProtect
 
-from AppKit import NSSearchPathForDirectoriesInDomains
+from AppKit import NSSearchPathForDirectoriesInDomains, NSEvent
 APPNAME = 'RoboFont'
 
 import threading
@@ -108,10 +108,63 @@ import queue
 
 import cProfile, pstats, io
 from pstats import SortKey
+from mojo.subscriber import Subscriber
 
 blackrobocjk_glyphwindowPosition = "com.black-foundry.blackrobocjk_glyphwindowPosition"
 
-class RoboCJKController(object):
+
+
+class EventsSubscriber(Subscriber):
+    def __init__(self, RCJKI):
+        super().__init__()
+        self.RCJKI = RCJKI
+        self.option = False
+        self.command = False
+        self.shift = False
+
+    def glyphEditorDidKeyDown(self, info):
+        self.option = info["optionDown"]
+        self.command = info["commandDown"]
+        self.shift = info["shiftDown"]
+
+    def glyphEditorDidMouseDown(self, info):
+        visibleRect = info["glyphEditor"].getVisibleRect()
+        glyphClickLoc = info["locationInGlyph"]
+        windowClickLoc = info["NSEvent"].locationInWindow()
+        clickCount = info["NSEvent"].clickCount()
+
+        if self.RCJKI.isAtomic:
+            return
+        
+        if not all([self.option, self.command]):
+            if not self.shift:
+                self.RCJKI.currentGlyph.selectedElement = []
+            try: self.RCJKI.px, self.RCJKI.py = glyphClickLoc.x, glyphClickLoc.y
+            except: return
+            
+            self.RCJKI.currentGlyph.pointIsInside((self.RCJKI.px, self.RCJKI.py), self.shift)
+            self.RCJKI.currentViewSliderList.deepComponentAxesList.set([])
+            self.RCJKI.currentViewSliderList.deepComponentName.set("")
+            if self.RCJKI.currentGlyph.selectedElement: 
+                self.RCJKI.setListWithSelectedElement()
+                if clickCount == 2 and not self.RCJKI._currentSourceValidated():
+  
+                    popover.EditPopoverAlignTool(
+                        self.RCJKI, 
+                        (windowClickLoc.x, visibleRect[3] + 2*visibleRect[1] - windowClickLoc.y), 
+                        self.RCJKI.currentGlyph
+                        )
+        else:
+            self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((glyphClickLoc.x, glyphClickLoc.y))
+            addObserver(self.RCJKI, 'mouseDragged', 'mouseDragged')
+        if not self.RCJKI.isAtomic:
+            self.RCJKI.glyphInspectorWindow.deepComponentListItem.setList()
+            self.RCJKI.glyphInspectorWindow.transformationItem.setTransformationsField()
+
+    
+        
+
+class RoboCJKController(Subscriber):
 
 
     hiddenSavePath = os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME, 'mySQLSave')
@@ -120,6 +173,7 @@ class RoboCJKController(object):
     _version = 1.5
 
     def __init__(self):
+        self.subscriber = EventsSubscriber(self)
         self.observers = False
         self.drawer = drawer.Drawer(self)
         self.transformationTool = transformationTool.TransformationTool(self)
@@ -235,7 +289,7 @@ class RoboCJKController(object):
             removeObserver(self, "drawPreview")
             removeObserver(self, "drawInactive")
             removeObserver(self, "currentGlyphChanged")
-            removeObserver(self, "mouseDown")
+            # removeObserver(self, "mouseDown")
             removeObserver(self, "mouseUp")
             removeObserver(self, "keyDown")
             removeObserver(self, "keyUp")
@@ -249,7 +303,7 @@ class RoboCJKController(object):
             addObserver(self, "observerDrawPreview", "drawPreview")
             addObserver(self, "observerDraw", "drawInactive")
             addObserver(self, "currentGlyphChanged", "currentGlyphChanged")
-            addObserver(self, "mouseDown", "mouseDown")
+            # addObserver(self, "mouseDown", "mouseDown")
             addObserver(self, "mouseUp", "mouseUp")
             addObserver(self, "keyDown", "keyDown")
             addObserver(self, "keyUp", "keyUp")
@@ -593,45 +647,50 @@ class RoboCJKController(object):
         except Exception as e:
             return False
 
-    @refresh
-    def mouseDown(self, point):
-        if self.isAtomic:
-            return
-        event = extractNSEvent(point)
-        modifiers = getActiveEventTool().getModifiers()
-        option = modifiers['optionDown']
-        command = modifiers['commandDown']
-        if not all([option, command]):
-            if not event["shiftDown"]:
-                self.currentGlyph.selectedElement = []
-            try: self.px, self.py = point['point'].x, point['point'].y
-            except: return
+    # @refresh
+    # def mouseDown(self, point):
+    #     if self.isAtomic:
+    #         return
+    #     event = extractNSEvent(point)
+    #     modifiers = getActiveEventTool().getModifiers()
+    #     option = modifiers['optionDown']
+    #     command = modifiers['commandDown']
+    #     if not all([option, command]):
+    #         if not event["shiftDown"]:
+    #             self.currentGlyph.selectedElement = []
+    #         try: self.px, self.py = point['point'].x, point['point'].y
+    #         except: return
             
-            self.currentGlyph.pointIsInside((self.px, self.py), event["shiftDown"])
-            self.currentViewSliderList.deepComponentAxesList.set([])
-            self.currentViewSliderList.deepComponentName.set("")
-            if self.currentGlyph.selectedElement: 
-                self.setListWithSelectedElement()
-                if point['clickCount'] == 2 and not self._currentSourceValidated():
-                    # pr = cProfile.Profile()
-                    # pr.enable()   
-                    popover.EditPopoverAlignTool(
-                        self, 
-                        point['point'], 
-                        self.currentGlyph
-                        )
-                    # pr.disable()
-                    # s = io.StringIO()
-                    # sortby = SortKey.CUMULATIVE
-                    # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                    # ps.print_stats()
-                    # print(s.getvalue())
-        else:
-            self.currentGlyph.setTransformationCenterToSelectedElements((point['point'].x, point['point'].y))
-            addObserver(self, 'mouseDragged', 'mouseDragged')
-        if not self.isAtomic:
-            self.glyphInspectorWindow.deepComponentListItem.setList()
-            self.glyphInspectorWindow.transformationItem.setTransformationsField()
+    #         self.currentGlyph.pointIsInside((self.px, self.py), event["shiftDown"])
+    #         self.currentViewSliderList.deepComponentAxesList.set([])
+    #         self.currentViewSliderList.deepComponentName.set("")
+    #         if self.currentGlyph.selectedElement: 
+    #             self.setListWithSelectedElement()
+    #             if point['clickCount'] == 2 and not self._currentSourceValidated():
+
+    #                 # print(point['view'].enclosingScrollView().__dict__.keys())
+    #                 # print(point['point'])
+    #                 # print(point['offset'])
+    #                 # x = point['view'].enclosingScrollView().frame().size[0]
+    #                 # pr = cProfile.Profile()
+    #                 # pr.enable()   
+    #                 popover.EditPopoverAlignTool(
+    #                     self, 
+    #                     (point['point'][0], point['point'][1]), 
+    #                     self.currentGlyph
+    #                     )
+    #                 # pr.disable()
+    #                 # s = io.StringIO()
+    #                 # sortby = SortKey.CUMULATIVE
+    #                 # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    #                 # ps.print_stats()
+    #                 # print(s.getvalue())
+    #     else:
+    #         self.currentGlyph.setTransformationCenterToSelectedElements((point['point'].x, point['point'].y))
+    #         addObserver(self, 'mouseDragged', 'mouseDragged')
+    #     if not self.isAtomic:
+    #         self.glyphInspectorWindow.deepComponentListItem.setList()
+    #         self.glyphInspectorWindow.transformationItem.setTransformationsField()
 
     def mouseDragged(self, point):
         try:

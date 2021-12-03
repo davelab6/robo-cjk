@@ -33,8 +33,7 @@ def makeEmptyPopover(size, pos, view):
     p = Popover(size)
     if not hasattr(p, "_bindings"):
         p._bindings = {}
-    offsetX, offsetY = (0,0)#view.offset()
-    return (p, (pos.x+offsetX, pos.y+offsetY))
+    return (p, (pos[0], pos[1]))
 
 def str_to_int_or_float(s):
     try:
@@ -58,9 +57,7 @@ class EditPopover(object):
     @property
     def relativeRect(self):
         x,y = self._viewPos
-        r = NSRect((x-2, y-2), (4, 4))
-        print(r)
-        return r
+        return NSRect((x-2, y-2), (4, 4))
 
     @property
     def popover(self):
@@ -72,7 +69,7 @@ class EditPopover(object):
     def open(self):
         self.popover.open(
             parentView=CurrentGlyphWindow().getGlyphView().enclosingScrollView(), 
-            preferredEdge='right',
+            preferredEdge='top',
             relativeRect=self.relativeRect
             )
 
