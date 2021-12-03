@@ -18,8 +18,9 @@ along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 """
 from imp import reload
 from mojo.events import getActiveEventTool
+from mojo.UI import CurrentGlyphWindow
 from vanilla import *
-from AppKit import NSColor, NSNoBorder, NumberFormatter
+from AppKit import NSColor, NSNoBorder, NumberFormatter, NSRect
 import copy
 from utils import decorators
 # reload(decorators)
@@ -32,7 +33,7 @@ def makeEmptyPopover(size, pos, view):
     p = Popover(size)
     if not hasattr(p, "_bindings"):
         p._bindings = {}
-    offsetX, offsetY = view.offset()
+    offsetX, offsetY = (0,0)#view.offset()
     return (p, (pos.x+offsetX, pos.y+offsetY))
 
 def str_to_int_or_float(s):
@@ -49,8 +50,7 @@ def str_to_int_or_float(s):
 
 class EditPopover(object):
     def __init__(self, size, point):
-        eventTool = getActiveEventTool()
-        p,v = makeEmptyPopover(size, point, eventTool.getNSView())
+        p,v = makeEmptyPopover(size, point, CurrentGlyphWindow().getGlyphView())
         p.controller = self
         self._popover = p
         self._viewPos = v
@@ -58,7 +58,9 @@ class EditPopover(object):
     @property
     def relativeRect(self):
         x,y = self._viewPos
-        return (x-2, y-2, 4, 4)
+        r = NSRect((x-2, y-2), (4, 4))
+        print(r)
+        return r
 
     @property
     def popover(self):
@@ -69,7 +71,8 @@ class EditPopover(object):
 
     def open(self):
         self.popover.open(
-            parentView=getActiveEventTool().getNSView(), 
+            parentView=CurrentGlyphWindow().getGlyphView().enclosingScrollView(), 
+            preferredEdge='right',
             relativeRect=self.relativeRect
             )
 
