@@ -108,7 +108,7 @@ import queue
 
 import cProfile, pstats, io
 from pstats import SortKey
-from mojo.subscriber import Subscriber
+from mojo.subscriber import Subscriber, unregisterGlyphEditorSubscriber
 
 blackrobocjk_glyphwindowPosition = "com.black-foundry.blackrobocjk_glyphwindowPosition"
 
@@ -281,6 +281,8 @@ class RoboCJKController(Subscriber):
 
     def toggleObservers(self, forceKill=False):
         if self.observers or forceKill:
+            unregisterGlyphEditorSubscriber(self.subscriber)
+
             removeObserver(self, "fontDidSave")
             removeObserver(self, "glyphAdditionContextualMenuItems")
             # removeObserver(self, "glyphWindowWillOpen")
