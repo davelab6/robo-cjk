@@ -122,10 +122,10 @@ class EventsSubscriber(Subscriber):
         self.command = False
         self.shift = False
 
-    def glyphEditorDidKeyDown(self, info):
-        self.option = info["optionDown"]
-        self.command = info["commandDown"]
-        self.shift = info["shiftDown"]
+    def glyphEditorDidChangeModifiers(self, info):
+        self.option = info["deviceState"]["optionDown"]
+        self.command = info["deviceState"]["commandDown"]
+        self.shift = info["deviceState"]["shiftDown"]
 
     def glyphEditorDidMouseDown(self, info):
         visibleRect = info["glyphEditor"].getVisibleRect()
