@@ -108,7 +108,7 @@ import queue
 
 import cProfile, pstats, io
 from pstats import SortKey
-from mojo.subscriber import Subscriber, unregisterGlyphEditorSubscriber
+from mojo.subscriber import Subscriber, unregisterRoboFontSubscriber
 
 blackrobocjk_glyphwindowPosition = "com.black-foundry.blackrobocjk_glyphwindowPosition"
 
@@ -149,7 +149,6 @@ class EventsSubscriber(Subscriber):
             if self.RCJKI.currentGlyph.selectedElement: 
                 self.RCJKI.setListWithSelectedElement()
                 if clickCount == 2 and not self.RCJKI._currentSourceValidated():
-  
                     popover.EditPopoverAlignTool(
                         self.RCJKI, 
                         (windowClickLoc.x, visibleRect[3] + 2*visibleRect[1] - windowClickLoc.y), 
@@ -157,13 +156,33 @@ class EventsSubscriber(Subscriber):
                         )
         else:
             self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((glyphClickLoc.x, glyphClickLoc.y))
-            addObserver(self.RCJKI, 'mouseDragged', 'mouseDragged')
+            # addObserver(self.RCJKI, 'mouseDragged', 'mouseDragged')
         if not self.RCJKI.isAtomic:
             self.RCJKI.glyphInspectorWindow.deepComponentListItem.setList()
             self.RCJKI.glyphInspectorWindow.transformationItem.setTransformationsField()
 
-    
-        
+    def glyphEditorDidMouseUp(self, info):
+        self.RCJKI.currentGlyph.reinterpolate = False
+        if self.RCJKI.isAtomic:
+            return
+        if self.RCJKI.transformationToolIsActiv and self.RCJKI.currentGlyph.selectedElement: return
+        try: x, y = info['locationInGlyph'].x, info['locationInGlyph'].y
+        except: return
+        self.RCJKI.currentViewSliderList.deepComponentAxesList.set([])
+        self.RCJKI.currentGlyph.selectionRectTouch(
+            *sorted([x, self.RCJKI.px]), 
+            *sorted([y, self.RCJKI.py])
+            )
+        if self.RCJKI.currentGlyph.selectedElement:
+            self.RCJKI.setListWithSelectedElement()
+        if not self.RCJKI.isAtomic:
+            self.RCJKI.glyphInspectorWindow.deepComponentListItem.setList()
+
+    def glyphEditorDidMouseDrag(self, info):
+        try:
+            self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((info['locationInGlyph'].x, info['locationInGlyph'].y))
+        except:
+            pass
 
 class RoboCJKController(object):
 
@@ -174,7 +193,7 @@ class RoboCJKController(object):
     _version = 1.5
 
     def __init__(self):
-        self.subscriber = EventsSubscriber(self)
+        # self.subscriber = EventsSubscriber(self)
         self.observers = False
         self.drawer = drawer.Drawer(self)
         self.transformationTool = transformationTool.TransformationTool(self)
@@ -283,7 +302,6 @@ class RoboCJKController(object):
     def toggleObservers(self, forceKill=False):
         if self.observers or forceKill:
             unregisterRoboFontSubscriber(self.subscriber)
-
             removeObserver(self, "fontDidSave")
             removeObserver(self, "glyphAdditionContextualMenuItems")
             # removeObserver(self, "glyphWindowWillOpen")
@@ -293,11 +311,12 @@ class RoboCJKController(object):
             removeObserver(self, "drawInactive")
             removeObserver(self, "currentGlyphChanged")
             # removeObserver(self, "mouseDown")
-            removeObserver(self, "mouseUp")
+            # removeObserver(self, "mouseUp")
             removeObserver(self, "keyDown")
             removeObserver(self, "keyUp")
             removeObserver(self, "didUndo")
         else:
+            self.subscriber = EventsSubscriber(self)
             addObserver(self, "fontDidSave", "fontDidSave")
             addObserver(self, "glyphAdditionContextualMenuItems", "glyphAdditionContextualMenuItems")
             # addObserver(self, "glyphWindowWillOpen", "glyphWindowWillOpen")
@@ -307,7 +326,7 @@ class RoboCJKController(object):
             addObserver(self, "observerDraw", "drawInactive")
             addObserver(self, "currentGlyphChanged", "currentGlyphChanged")
             # addObserver(self, "mouseDown", "mouseDown")
-            addObserver(self, "mouseUp", "mouseUp")
+            # addObserver(self, "mouseUp", "mouseUp")
             addObserver(self, "keyDown", "keyDown")
             addObserver(self, "keyUp", "keyUp")
             addObserver(self, "didUndo", "didUndo")
