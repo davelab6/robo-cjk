@@ -115,6 +115,7 @@ blackrobocjk_glyphwindowPosition = "com.black-foundry.blackrobocjk_glyphwindowPo
 
 
 class EventsSubscriber(Subscriber):
+
     def __init__(self, RCJKI):
         super().__init__()
         self.RCJKI = RCJKI
@@ -281,7 +282,7 @@ class RoboCJKController(Subscriber):
 
     def toggleObservers(self, forceKill=False):
         if self.observers or forceKill:
-            unregisterGlyphEditorSubscriber(self.subscriber)
+            unregisterRoboFontSubscriber(self.subscriber)
 
             removeObserver(self, "fontDidSave")
             removeObserver(self, "glyphAdditionContextualMenuItems")
