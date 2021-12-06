@@ -156,7 +156,6 @@ class EventsSubscriber(Subscriber):
                         )
         else:
             self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((glyphClickLoc.x, glyphClickLoc.y))
-            # addObserver(self.RCJKI, 'mouseDragged', 'mouseDragged')
         if not self.RCJKI.isAtomic:
             self.RCJKI.glyphInspectorWindow.deepComponentListItem.setList()
             self.RCJKI.glyphInspectorWindow.transformationItem.setTransformationsField()
@@ -180,7 +179,8 @@ class EventsSubscriber(Subscriber):
 
     def glyphEditorDidMouseDrag(self, info):
         try:
-            self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((info['locationInGlyph'].x, info['locationInGlyph'].y))
+            if all([self.option, self.command]):
+                self.RCJKI.currentGlyph.setTransformationCenterToSelectedElements((info['locationInGlyph'].x, info['locationInGlyph'].y))
         except:
             pass
 
@@ -714,11 +714,11 @@ class RoboCJKController(object):
     #         self.glyphInspectorWindow.deepComponentListItem.setList()
     #         self.glyphInspectorWindow.transformationItem.setTransformationsField()
 
-    def mouseDragged(self, point):
-        try:
-            self.currentGlyph.setTransformationCenterToSelectedElements((point['point'].x, point['point'].y))
-        except:
-            pass
+    # def mouseDragged(self, point):
+    #     try:
+    #         self.currentGlyph.setTransformationCenterToSelectedElements((point['point'].x, point['point'].y))
+    #     except:
+    #         pass
 
     def setListWithSelectedElement(self):
         element = self.currentViewSliderList
@@ -749,24 +749,24 @@ class RoboCJKController(object):
                 element.deepComponentName.set(data[self.currentGlyph.selectedElement[0]].name)
         self.sliderValue = None
 
-    @refresh
-    def mouseUp(self, info):
-        self.currentGlyph.reinterpolate = False
-        removeObserver(self, 'mouseDragged')
-        if self.isAtomic:
-            return
-        if self.transformationToolIsActiv and self.currentGlyph.selectedElement: return
-        try: x, y = info['point'].x, info['point'].y
-        except: return
-        self.currentViewSliderList.deepComponentAxesList.set([])
-        self.currentGlyph.selectionRectTouch(
-            *sorted([x, self.px]), 
-            *sorted([y, self.py])
-            )
-        if self.currentGlyph.selectedElement:
-            self.setListWithSelectedElement()
-        if not self.isAtomic:
-            self.glyphInspectorWindow.deepComponentListItem.setList()
+    # @refresh
+    # def mouseUp(self, info):
+    #     self.currentGlyph.reinterpolate = False
+    #     removeObserver(self, 'mouseDragged')
+    #     if self.isAtomic:
+    #         return
+    #     if self.transformationToolIsActiv and self.currentGlyph.selectedElement: return
+    #     try: x, y = info['point'].x, info['point'].y
+    #     except: return
+    #     self.currentViewSliderList.deepComponentAxesList.set([])
+    #     self.currentGlyph.selectionRectTouch(
+    #         *sorted([x, self.px]), 
+    #         *sorted([y, self.py])
+    #         )
+    #     if self.currentGlyph.selectedElement:
+    #         self.setListWithSelectedElement()
+    #     if not self.isAtomic:
+    #         self.glyphInspectorWindow.deepComponentListItem.setList()
 
     
     def doUndo(self):
