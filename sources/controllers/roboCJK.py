@@ -106,7 +106,6 @@ APPNAME = 'RoboFont'
 import threading
 import queue
 
-
 blackrobocjk_glyphwindowPosition = "com.black-foundry.blackrobocjk_glyphwindowPosition"
 
 class RoboCJKController(object):

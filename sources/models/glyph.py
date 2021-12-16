@@ -85,7 +85,8 @@ class Glyph(RGlyph):
 
         @property
         def glyph(self):
-            return interpolation._transformGlyph(self.resultGlyph.copy(), self.transformation)
+            return self.resultGlyph
+            # return interpolation._transformGlyph(self.resultGlyph.copy(), self.transformation)
 
 
     def __init__(self):
@@ -194,6 +195,11 @@ class Glyph(RGlyph):
         self.lib.clear()
         self.markColor = color
         # print("glyohsave", self.name, self.stateColor)
+
+    def drawOutline(self, outline, g):
+        bez = g.getPointPen()
+        outline.drawPoints(bez)
+        g.drawPoints(bez)
 
     def getParent(self):
         return self.currentFont

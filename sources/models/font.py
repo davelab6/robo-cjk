@@ -29,6 +29,7 @@ from utils import decorators, files, locker
 # reload(decorators)
 # reload(locker)
 gitCoverage = decorators.gitCoverage
+from rcjktools import project
 from utils import interpolation
 # reload(interpolation)
 from models import atomicElement, deepComponent, characterGlyph
@@ -183,13 +184,28 @@ class Font():
             )
         self._hiddenSavePath = hiddenSavePath
         savePath = os.path.join(hiddenSavePath, f"{self.fontName}.ufo")
+        savePathRCJK = os.path.join(hiddenSavePath, f"{self.fontName}.rcjk")
+        if not os.path.exists(savePathRCJK):
+            os.makedirs(savePathRCJK)
+        for glyphtype in ["atomicElement", 'deepComponent', 'characterGlyph']:
+            if not os.path.exists(os.path.join(savePathRCJK, glyphtype)):
+                os.makedirs(os.path.join(savePathRCJK, glyphtype))
         files.makepath(savePath)
+        self.RCJKFontPath = savePathRCJK
+
         self._RFont.save(savePath)
         self.mysqlGlyphData = {}
         self._mysqlInsertedGlyph = {}
         self.uid = font["data"]["uid"]
         self._fullRFont = self._RFont
         self.fontLib = font["data"]["fontlib"]
+        self.designSpace = font["data"].get("designspace", "")
+        fontlibpath = os.path.join(savePathRCJK, 'fontLib.json')
+        with open(fontlibpath, "w", encoding = 'utf-8') as file:
+            file.write(json.dumps(self.fontLib))
+        designSpacepath = os.path.join(savePathRCJK, 'designspace.json')
+        with open(designSpacepath, "w", encoding = 'utf-8') as file:
+            file.write(json.dumps(self.designSpace))
         # self.dataBase = font["data"]["glyphs_composition"]
         try:
             dataBase_data = self.client.glyphs_composition_get(self.uid)["data"]
@@ -204,6 +220,7 @@ class Font():
         self._initFontLib(self.fontLib, self._RFont)
         self.fontVariations = self.fontLib.get('robocjk.fontVariations', [])
         self.defaultGlyphWidth = self._RFont.lib.get("robocjk.defaultGlyphWidth", 1000)
+        self.fontProject = project.RoboCJKProject(self.RCJKFontPath, decomposeClassicComponents=True)
 
     def clearRFont(self):
         # for k, v in copy.deepcopy(self._RFont.lib.asDict()).items():
@@ -613,33 +630,29 @@ class Font():
             name = name["name"]
 
         if name in self.staticAtomicElementSet():
-            gtype = "AE"
+            gtype = "atomicElement"
         elif name in self.staticDeepComponentSet():
-            gtype = "DC"
+            gtype = "deepComponent"
         else:
-            gtype = "CG"
+            gtype = "characterGlyph"
 
         made_of_aes = []
         made_of_dcs = []
-        exceptions = [exception]
 
         start = time.time()
-        if gtype == "AE":
+
+        if gtype == "atomicElement":
             glyph = atomicElement.AtomicElement(name)
             BGlyph = self.client.atomic_element_get(self.uid, name)["data"]
-        elif gtype == "DC":
+        elif gtype == "deepComponent":
             glyph = deepComponent.DeepComponent(name)
             BGlyph = self.client.deep_component_get(self.uid, name)["data"]
             made_of_aes = BGlyph["made_of"]
-            if name  == exception:
-                exceptions = [e["name"] for e in BGlyph["made_of"]]
-        elif gtype == "CG":
+        elif gtype == "characterGlyph":
             glyph = characterGlyph.CharacterGlyph(name)
             BGlyph = self.client.character_glyph_get(self.uid, name)["data"]
             made_of_dcs = BGlyph["made_of"]
             made_of_aes = [x for dc in made_of_dcs for x in dc["made_of"]]
-            if name  == exception:
-                exceptions = [e["name"] for e in BGlyph["made_of"]]
 
         self.mysqlGlyphData[name] = BGlyph
 
@@ -650,36 +663,45 @@ class Font():
     
 
         for ae in made_of_aes:
-            if ae["name"] in exceptions or ae["name"] in font.keys(): continue
+            if ae["name"] == exception or ae["name"] in font.keys(): continue
+
             glyph2 = atomicElement.AtomicElement(ae["name"])
-            self.insertmysqlGlyph(glyph2, ae["name"], ae, font, "AE")
-
+            self.insertmysqlGlyph(glyph2, ae["name"], ae, font, "atomicElement")
         for dc in made_of_dcs:
-            if dc["name"] in exceptions or dc["name"] in font.keys(): continue
-            glyph2 = deepComponent.DeepComponent(dc["name"])
-            self.insertmysqlGlyph(glyph2, dc["name"], dc, font, "DC")
+            if dc["name"] == exception or dc["name"] in font.keys(): continue
 
-        if name not in exceptions:
-            self.insertmysqlGlyph(glyph, name, BGlyph, font, gtype)
+            glyph2 = deepComponent.DeepComponent(dc["name"])
+            self.insertmysqlGlyph(glyph2, dc["name"], dc, font, "deepComponent")
+
+        self.insertmysqlGlyph(glyph, name, BGlyph, font, gtype)
 
         stop = time.time()
         print("insert glyphs:", stop-start, 'seconds to insert %s'%str(1+len(made_of_aes+made_of_dcs)))
 
     def insertmysqlGlyph(self, glyph, name, BGlyph, font, gtype):
         if BGlyph is None: return
+        fileName = files.userNameToFileName(name, suffix = ".glif")
         xml = BGlyph["data"]
+        path = os.path.join(self.RCJKFontPath, gtype, fileName)
+        with open(path, "w", encoding = 'utf-8') as file:
+            file.write(xml)
         self.insertGlyph(glyph, xml, 'foreground', font)
         for layer in BGlyph["layers"]:
             layerName = layer["group_name"]
 
-            if gtype == "AE":
+            if gtype == "atomicElement":
                 glyph = atomicElement.AtomicElement(name)
-            elif gtype == "DC":
+            elif gtype == "deepComponent":
                 glyph = deepComponent.DeepComponent(name)
-            elif gtype == "CG":
+            elif gtype == "characterGlyph":
                 glyph = characterGlyph.CharacterGlyph(name)
 
             xml = layer["data"]
+            path = os.path.join(self.RCJKFontPath, gtype, layerName, fileName)
+            if not os.path.exists(os.path.join(self.RCJKFontPath, gtype, layerName)):
+                os.makedirs(os.path.join(self.RCJKFontPath, gtype, layerName))
+            with open(path, "w", encoding = 'utf-8') as file:
+                file.write(xml)
 
             # font.newLayer(layerName)
             self.insertGlyph(glyph, xml, layerName, font)

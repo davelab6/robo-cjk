@@ -19,6 +19,7 @@ along with Robo-CJK.  If not, see <https://www.gnu.org/licenses/>.
 from mojo.roboFont import *
 from imp import reload
 from models import glyph, component, glyphPreview
+from rcjktools import project
 # reload(glyph)
 # reload(component)
 # reload(glyphPreview)
@@ -49,6 +50,25 @@ statusKey = 'robocjk.status'
 
 import cProfile, pstats, io
 from pstats import SortKey
+
+from fontTools.pens.pointInsidePen import PointInsidePen
+from fontTools.pens.recordingPen import RecordingPen
+
+
+class NotRGlyph(RecordingPen):
+    def __init__(self):
+        super().__init__()
+
+    def draw(self, pen):
+        self.replay(pen)
+
+    def drawPoints(self, pen):
+        self.draw(SegmentToPointPen(pen))
+
+    def pointInside(self, pt):
+        pen = PointInsidePen(None, pt)
+        self.draw(pen)
+        return pen.getResult()
 
 
 class CharacterGlyph(Glyph):
@@ -83,171 +103,193 @@ class CharacterGlyph(Glyph):
 
 
     def preview(self, position:dict={}, font = None, forceRefresh=True, axisPreview = False):
-        locationKey = ','.join([k+':'+str(v) for k,v in position.items()]) if position else ','.join([k+':'+str(v) for k,v in self.normalizedValueToMinMaxValue(self.getLocation(), self).items()])
-        # print(locationKey)
-        #### There is 3 possible condition for the drawing/preview if there is a selected element(s) ####
-        #### fr: 3 CONDITIONS DE DESSIN POSSIBLE EN CAS D'ÉLEMENT SELECTIONNÉ ####
-        redrawAndTransformAll = False
-        redrawAndTransformSelected = False
-        onlyTransformSelected = False
 
-        if self.selectedElement and not self.reinterpolate:
-            onlyTransformSelected = True
-        elif self.selectedElement and self.reinterpolate and not axisPreview:
-            redrawAndTransformAll = True
-        elif self.selectedElement:
-            redrawAndTransformSelected = True
-        else:
-            redrawAndTransformAll = True
-        ############################################################
+        (
+            outline,
+            dcItems,
+            classicComponents,
+            width,
+        ) = self.currentFont.fontProject.instantiateCharacterGlyph(
+            self.name, location=position
+        )
 
+        preview = []
 
-        #### If there is no selected element, we will have a look to the stored preview ####
-        #### fr: S'IL N'Y A PAS DE SELECTION, RECHERCHE D'UN CACHE ####
-
-        previewLocationsStore = self.previewLocationsStore.get(locationKey, False)
-        # print("previewLocationsStore", previewLocationsStore, '\n')
-        # print("redrawSelectedElementSource", self.redrawSelectedElementSource, '\n')
-        if axisPreview:
-            redrawSeletedElement = self.redrawSelectedElementSource
-        else:
-            redrawSeletedElement = self.redrawSelectedElementPreview
-        if not redrawSeletedElement:
-            if previewLocationsStore:
-                for p in previewLocationsStore:
-                    yield p
-                return
-            if axisPreview and self.axisPreview:
-                # print('DC has axisPreview', self.axisPreview)
-                for e in self.axisPreview: yield e
-                return
-            elif not forceRefresh and self.previewGlyph and not axisPreview: 
-                # print('DC has previewGlyph', self.previewGlyph)
-                for e in self.previewGlyph: yield e
-                return
-        ############################################################
-
-        #### if there is no selection and no redraw instruction, we will have a look to the stored preview ####
-        #### fr: S'IL N'Y A UNE SELECTION MAIS PAS D'INSTRUCTION DE REDESSIN, RECHERCHE D'UN CACHE ####
-        if not redrawAndTransformAll and not redrawAndTransformSelected and not onlyTransformSelected:
-            if previewLocationsStore:
-                for p in previewLocationsStore:
-                    yield p
-                return
-            ############################################################
-        else:
-            #### there is no redraw instruction ####
-            #### fr: IL Y A DES INSTRUCTION DE REDESSIN ####
-            if axisPreview:
-                preview = self.axisPreview
-            else:
-                preview = self.previewGlyph
-
-            """ in this condition we don't look into the stored preview, we will recompute and redraw everything"""
-            """ fr: Dans cette condition on ne ce soucis pas du cache, on redessine tout"""
-            if redrawAndTransformAll:
-                if axisPreview:
-                    preview = self.axisPreview = []
-                else:
-                    preview = self.previewGlyph = []
-            else:
-                """In this contition we take the stored preview and we will work on it, to modify the transformation settings 
-                of the selected element, or to recompute the element and its transformation settings. All the other elements 
-                non selected from the stored preview will not be recomputed"""
-
-                """fr: Dans cette condition on récupère ce qu'il y a dans le cache et on travaillera 
-                dessus après, soit pour modifier les instructions de transformation de l'element selectionné
-                soit pour recalculer l'element et ses instructions de transformation. Les autres elements du cache ne seront
-                pas recalculé"""
-                if previewLocationsStore:
-                    if axisPreview:
-                        preview = self.axisPreview = previewLocationsStore
-                    else:
-                        preview = self.previewGlyph = previewLocationsStore     
-
-        if not position:
-            position = self.getLocation()
-
-        position =self.normalizedValueToMinMaxValue(position, self)
-
-
-        # pr = cProfile.Profile()
-        # pr.enable()
-
-        locations = [{}]
-        locations.extend([self.normalizedValueToMinMaxValue(x["location"], self) for x in self._glyphVariations if x["on"]])
-        model = VariationModel(locations)
-
-        if redrawAndTransformAll:
-            masterDeepComponents = self._deepComponents
-            axesDeepComponents = [variation.get("deepComponents") for variation in self._glyphVariations.getList() if variation.get("on")==1]
-        else:
-            masterDeepComponents = [x for i, x in enumerate(self._deepComponents) if i in self.selectedElement]
-            axesDeepComponents = [[x for i, x in enumerate(variation.get("deepComponents")) if i in self.selectedElement] for variation in self._glyphVariations.getList() if variation.get("on")==1]
-        
-        result = []
-        deltasList = []
-        for i, deepComponent in enumerate(masterDeepComponents):
-            variations = []
-            for gv in axesDeepComponents:
-                variations.append(gv[i])
-            deltas = model.getDeltas([deepComponent, *variations])
-            # result.append(model.interpolateFromMasters(position, [deepComponent, *variations]))
-            result.append(model.interpolateFromDeltas(position, deltas))
-            deltasList.append(deltas)
-
-        
-        if font is None:
-            font = self.getParent()
-        for i, dc in enumerate(result):
-            name = dc.get("name")
-            if not set([name]) & (font.staticAtomicElementSet()|font.staticDeepComponentSet()|font.staticCharacterGlyphSet()): continue
-            g = font[name]
-            
-            if onlyTransformSelected:
-                preview[self.selectedElement[i]].transformation = dc.get("transform")
-            else:
-                resultGlyph = RGlyph()
-                g = g.preview(position=dc.get('coord'), deltasStore=deltasList[i], font=font, forceRefresh=True)
-                for c in g:
-                    c = c.glyph
-                    c.draw(resultGlyph.getPen())
-                if redrawAndTransformSelected:
-                    preview[self.selectedElement[i]].resultGlyph = resultGlyph   
-                    preview[self.selectedElement[i]].transformation = dc.get("transform")
-                else:
-                    preview.append(self.ResultGlyph(resultGlyph, dc.get("transform")))
-
-        if len(self._RGlyph) and not self.selectedElement:
-            layerGlyphs = []
-            layerNames = self._glyphVariations.axes
-            for layerName in layerNames:
-                try:
-                    g = font._RFont.getLayer(layerName)[self.name]
-                except Exception as e: 
-                    print(e)
-                    continue
-                layerGlyphs.append(g)
-            if len(layerGlyphs):
-                resultGlyph = model.interpolateFromMasters(position, [self._RGlyph, *layerGlyphs])
-                preview.append(self.ResultGlyph(resultGlyph))
-
-        self.previewLocationsStore[','.join([k+':'+str(v) for k,v in position.items()])] = preview
-
-        if axisPreview:
-            self.redrawSelectedElementSource = False
-        else:
-            self.redrawSelectedElementPreview = False
+        for dcIndex, (dcName, atomicElements) in enumerate(dcItems):
+            g = RGlyph()
+            for aeIndex, (aeName, atomicOutline) in enumerate(atomicElements):
+                self.drawOutline(atomicOutline, g)
+            preview.append(self.ResultGlyph(g))
 
         for resultGlyph in preview:
             yield resultGlyph
 
-        # pr.disable()
-        # s = io.StringIO()
-        # sortby = SortKey.CUMULATIVE
-        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        # ps.print_stats()
-        # print(s.getvalue())
+
+        # locationKey = ','.join([k+':'+str(v) for k,v in position.items()]) if position else ','.join([k+':'+str(v) for k,v in self.normalizedValueToMinMaxValue(self.getLocation(), self).items()])
+        # # print(locationKey)
+        # #### There is 3 possible condition for the drawing/preview if there is a selected element(s) ####
+        # #### fr: 3 CONDITIONS DE DESSIN POSSIBLE EN CAS D'ÉLEMENT SELECTIONNÉ ####
+        # redrawAndTransformAll = False
+        # redrawAndTransformSelected = False
+        # onlyTransformSelected = False
+
+        # if self.selectedElement and not self.reinterpolate:
+        #     onlyTransformSelected = True
+        # elif self.selectedElement and self.reinterpolate and not axisPreview:
+        #     redrawAndTransformAll = True
+        # elif self.selectedElement:
+        #     redrawAndTransformSelected = True
+        # else:
+        #     redrawAndTransformAll = True
+        # ############################################################
+
+
+        # #### If there is no selected element, we will have a look to the stored preview ####
+        # #### fr: S'IL N'Y A PAS DE SELECTION, RECHERCHE D'UN CACHE ####
+
+        # previewLocationsStore = self.previewLocationsStore.get(locationKey, False)
+        # # print("previewLocationsStore", previewLocationsStore, '\n')
+        # # print("redrawSelectedElementSource", self.redrawSelectedElementSource, '\n')
+        # if axisPreview:
+        #     redrawSeletedElement = self.redrawSelectedElementSource
+        # else:
+        #     redrawSeletedElement = self.redrawSelectedElementPreview
+        # if not redrawSeletedElement:
+        #     if previewLocationsStore:
+        #         for p in previewLocationsStore:
+        #             yield p
+        #         return
+        #     if axisPreview and self.axisPreview:
+        #         # print('DC has axisPreview', self.axisPreview)
+        #         for e in self.axisPreview: yield e
+        #         return
+        #     elif not forceRefresh and self.previewGlyph and not axisPreview: 
+        #         # print('DC has previewGlyph', self.previewGlyph)
+        #         for e in self.previewGlyph: yield e
+        #         return
+        # ############################################################
+
+        # #### if there is no selection and no redraw instruction, we will have a look to the stored preview ####
+        # #### fr: S'IL N'Y A UNE SELECTION MAIS PAS D'INSTRUCTION DE REDESSIN, RECHERCHE D'UN CACHE ####
+        # if not redrawAndTransformAll and not redrawAndTransformSelected and not onlyTransformSelected:
+        #     if previewLocationsStore:
+        #         for p in previewLocationsStore:
+        #             yield p
+        #         return
+        #     ############################################################
+        # else:
+        #     #### there is no redraw instruction ####
+        #     #### fr: IL Y A DES INSTRUCTION DE REDESSIN ####
+        #     if axisPreview:
+        #         preview = self.axisPreview
+        #     else:
+        #         preview = self.previewGlyph
+
+        #     """ in this condition we don't look into the stored preview, we will recompute and redraw everything"""
+        #     """ fr: Dans cette condition on ne ce soucis pas du cache, on redessine tout"""
+        #     if redrawAndTransformAll:
+        #         if axisPreview:
+        #             preview = self.axisPreview = []
+        #         else:
+        #             preview = self.previewGlyph = []
+        #     else:
+        #         """In this contition we take the stored preview and we will work on it, to modify the transformation settings 
+        #         of the selected element, or to recompute the element and its transformation settings. All the other elements 
+        #         non selected from the stored preview will not be recomputed"""
+
+        #         """fr: Dans cette condition on récupère ce qu'il y a dans le cache et on travaillera 
+        #         dessus après, soit pour modifier les instructions de transformation de l'element selectionné
+        #         soit pour recalculer l'element et ses instructions de transformation. Les autres elements du cache ne seront
+        #         pas recalculé"""
+        #         if previewLocationsStore:
+        #             if axisPreview:
+        #                 preview = self.axisPreview = previewLocationsStore
+        #             else:
+        #                 preview = self.previewGlyph = previewLocationsStore     
+
+        # if not position:
+        #     position = self.getLocation()
+
+        # position =self.normalizedValueToMinMaxValue(position, self)
+
+
+        # # pr = cProfile.Profile()
+        # # pr.enable()
+
+        # locations = [{}]
+        # locations.extend([self.normalizedValueToMinMaxValue(x["location"], self) for x in self._glyphVariations if x["on"]])
+        # model = VariationModel(locations)
+
+        # if redrawAndTransformAll:
+        #     masterDeepComponents = self._deepComponents
+        #     axesDeepComponents = [variation.get("deepComponents") for variation in self._glyphVariations.getList() if variation.get("on")==1]
+        # else:
+        #     masterDeepComponents = [x for i, x in enumerate(self._deepComponents) if i in self.selectedElement]
+        #     axesDeepComponents = [[x for i, x in enumerate(variation.get("deepComponents")) if i in self.selectedElement] for variation in self._glyphVariations.getList() if variation.get("on")==1]
+        
+        # result = []
+        # deltasList = []
+        # for i, deepComponent in enumerate(masterDeepComponents):
+        #     variations = []
+        #     for gv in axesDeepComponents:
+        #         variations.append(gv[i])
+        #     deltas = model.getDeltas([deepComponent, *variations])
+        #     # result.append(model.interpolateFromMasters(position, [deepComponent, *variations]))
+        #     result.append(model.interpolateFromDeltas(position, deltas))
+        #     deltasList.append(deltas)
+
+        
+        # if font is None:
+        #     font = self.getParent()
+        # for i, dc in enumerate(result):
+        #     name = dc.get("name")
+        #     if not set([name]) & (font.staticAtomicElementSet()|font.staticDeepComponentSet()|font.staticCharacterGlyphSet()): continue
+        #     g = font[name]
+            
+        #     if onlyTransformSelected:
+        #         preview[self.selectedElement[i]].transformation = dc.get("transform")
+        #     else:
+        #         resultGlyph = RGlyph()
+        #         g = g.preview(position=dc.get('coord'), deltasStore=deltasList[i], font=font, forceRefresh=True)
+        #         for c in g:
+        #             c = c.glyph
+        #             c.draw(resultGlyph.getPen())
+        #         if redrawAndTransformSelected:
+        #             preview[self.selectedElement[i]].resultGlyph = resultGlyph   
+        #             preview[self.selectedElement[i]].transformation = dc.get("transform")
+        #         else:
+        #             preview.append(self.ResultGlyph(resultGlyph, dc.get("transform")))
+
+        # if len(self._RGlyph) and not self.selectedElement:
+        #     layerGlyphs = []
+        #     layerNames = self._glyphVariations.axes
+        #     for layerName in layerNames:
+        #         try:
+        #             g = font._RFont.getLayer(layerName)[self.name]
+        #         except Exception as e: 
+        #             print(e)
+        #             continue
+        #         layerGlyphs.append(g)
+        #     if len(layerGlyphs):
+        #         resultGlyph = model.interpolateFromMasters(position, [self._RGlyph, *layerGlyphs])
+        #         preview.append(self.ResultGlyph(resultGlyph))
+
+        # self.previewLocationsStore[','.join([k+':'+str(v) for k,v in position.items()])] = preview
+
+        # if axisPreview:
+        #     self.redrawSelectedElementSource = False
+        # else:
+        #     self.redrawSelectedElementPreview = False
+
+        # for resultGlyph in preview:
+        #     yield resultGlyph
+
+        # # pr.disable()
+        # # s = io.StringIO()
+        # # sortby = SortKey.CUMULATIVE
+        # # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # # ps.print_stats()
+        # # print(s.getvalue())
 
     @property
     def foreground(self):
