@@ -884,7 +884,7 @@ class RoboCJKController(object):
         sheets.SelectAtomicElementSheet(self, self.currentFont.atomicElementSet)
 
     def addDeepComponent(self, sender):
-        sheets.SelectDeepComponentSheet(self, self.currentFont.characterGlyphSet + self.currentFont.deepComponentSet)
+        sheets.SelectDeepComponentSheet(self, sorted(list(self.currentFont.staticCharacterGlyphSet() | self.currentFont.staticDeepComponentSet())))
 
     def fixGlyphCompatibility(self, sender):
         sheets.FixGlyphCompatibility(self, self.currentGlyph)        
