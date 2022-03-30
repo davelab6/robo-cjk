@@ -684,7 +684,7 @@ class AxisSheet:
         if self.RCJKI.currentGlyph.name.startswith("uni") or self.RCJKI.currentGlyph._RGlyph.unicode:
             self.actualCharacter = True
 
-        self.w.axesSegmentedButton = SegmentedButton((0, 0, -0, 20), [dict(title="Glyph Axes"), dict(title="Font Axes")], callback = self.axesSegmentedButtonCallback)
+        self.w.axesSegmentedButton = SegmentedButton((0, 0, -0, 20), [dict(title="Glyph Axes"), dict(title="Axes")], callback = self.axesSegmentedButtonCallback)
         self.w.axesSegmentedButton.set(self.actualCharacter)
 
         self.w.glyphaxes = Group((0, 20, -0, -20))
@@ -2130,13 +2130,16 @@ class CharacterGlyphInspector(Inspector):
         self.propertiesItem = PropertiesGroup((10, 0, -10, -0), self.RCJKI, self)
         self.transformationItem = TransformationGroup((10, 0, -10, -0), self.RCJKI, self)
 
+        axesSize = 100+10*len(self.RCJKI.currentGlyph._axes)
+        sourceSize =100+10*len(self.RCJKI.currentGlyph._glyphVariations)
+
         descriptions = [
                        dict(label="Composition Rules", view=self.compositionRulesItem, size=100, collapsed=False, canResize=True),
                        dict(label="Preview", view=self.previewItem, minSize=100, size=300, collapsed=False, canResize=True),
 
-                       dict(label="Font axes", view=self.axesItem, minSize=80, size=100, collapsed=False, canResize=True),
+                       dict(label="Axes", view=self.axesItem, minSize=80, size=axesSize, collapsed=False, canResize=True),
                        # dict(label="Glyph axes", view=self.glyphAxesItem, minSize=80, size=100, collapsed=False, canResize=True),
-                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=100, collapsed=False, canResize=True),
+                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=sourceSize, collapsed=False, canResize=True),
 
                        # dict(label="Font variation axes", view=self.glyphVariationAxesItem, minSize=80, size=150, collapsed=False, canResize=True),
                        dict(label="Deep component axes", view=self.deepComponentAxesItem, minSize=100, size=150, collapsed=False, canResize=True),
@@ -2167,12 +2170,15 @@ class DeepComponentInspector(Inspector):
         self.propertiesItem = PropertiesGroup((10, 0, -10, -0), self.RCJKI, self)
         self.transformationItem = TransformationGroup((10, 0, -10, -0), self.RCJKI, self)
 
+        axesSize = 100+10*len(self.RCJKI.currentGlyph._axes)
+        sourceSize =100+10*len(self.RCJKI.currentGlyph._glyphVariations)
+
         descriptions = [
                        dict(label="Related glyphs", view=self.relatedGlyphsItem, size=140, collapsed=False, canResize=True),
                        dict(label="Preview", view=self.previewItem, minSize=100, size=300, collapsed=False, canResize=True),
 
-                       dict(label="Glyph axes", view=self.axesItem, minSize=80, size=150, collapsed=False, canResize=True),
-                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=150, collapsed=False, canResize=True),
+                       dict(label="Glyph axes", view=self.axesItem, minSize=80, size=axesSize, collapsed=False, canResize=True),
+                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=sourceSize, collapsed=False, canResize=True),
 
                        # dict(label="Deep component axes", view=self.glyphVariationAxesItem, minSize=100, size=170, collapsed=False, canResize=True),
                        dict(label="Atomic element axes", view=self.deepComponentAxesItem, minSize=100, size=150, collapsed=False, canResize=True),
@@ -2203,11 +2209,14 @@ class AtomicElementInspector(Inspector):
         # self.glyphVariationAxesItem = GlyphVariationAxesGroup((0, 0, -0, -0), self.RCJKI, self, "atomicElement", glyphVariationsAxes)
         self.propertiesItem = PropertiesGroup((10, 0, -10, -0), self.RCJKI, self)
 
+        axesSize = 100+10*len(self.RCJKI.currentGlyph._axes)
+        sourceSize =100+10*len(self.RCJKI.currentGlyph._glyphVariations)
+
         descriptions = [
                        dict(label="Preview", view=self.previewItem, minSize=100, size=300, collapsed=False, canResize=True),
 
-                       dict(label="Glyph axes", view=self.axesItem, minSize=80, size=150, collapsed=False, canResize=True),
-                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=150, collapsed=False, canResize=True),
+                       dict(label="Glyph axes", view=self.axesItem, minSize=80, size=axesSize, collapsed=False, canResize=True),
+                       dict(label="Glyph Sources", view=self.sourcesItem, minSize=80, size=sourceSize, collapsed=False, canResize=True),
 
                        # dict(label="Atomic element axes", view=self.glyphVariationAxesItem, minSize=100, size=170, collapsed=False, canResize=True),
                        dict(label="Properties", view=self.propertiesItem, minSize = 80, size=150, collapsed=False, canResize=True)
