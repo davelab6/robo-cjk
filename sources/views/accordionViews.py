@@ -253,6 +253,9 @@ class CompositionRulesGroup(Group):
         self.existingInstancesList.set(self.existingDeepComponentInstances)
 
     def variantListDoubleClickCallback(self, sender):
+        if self.deepComponentName in self.RCJKI.get_cg_used_by(self.RCJKI.currentFont, self.RCJKI.currentGlyph.name, []):
+            message("Impossible to import this variable component, it will trigger an infinite loop")
+            return
         self.RCJKI.currentGlyph.addDeepComponentNamed(self.deepComponentName)
         self.RCJKI.updateDeepComponent(update = False)
 
@@ -307,6 +310,9 @@ class CompositionRulesGroup(Group):
         sel = sender.getSelection()
         if not sel: return
         dcname = self.deepComponentSettings["name"]
+        if dcname in self.RCJKI.get_cg_used_by(self.RCJKI.currentFont, self.RCJKI.currentGlyph.name, []):
+            message("Impossible to import this variable component, it will trigger an infinite loop")
+            return
         self.RCJKI.currentGlyph.addDeepComponentNamed(dcname, self.deepComponentSettings)
 
         if len(self.deepComponentVariationSettings) == len(self.RCJKI.currentGlyph._glyphVariations):

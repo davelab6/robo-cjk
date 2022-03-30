@@ -794,7 +794,6 @@ class RoboCJKController(object):
     def glyphAdditionContextualMenuItems(self, notification):
         self.menuItems = []
         validated = self._currentSourceValidated()
-        print('is deepcomponent', self.isDeepComponent, "is character glyph", self.isCharacterGlyph)
         if self.isDeepComponent:
             if not validated:
                 item = ('Add Atomic Element', self.addAtomicElement)
