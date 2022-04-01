@@ -1401,7 +1401,8 @@ class SourcesGroup(Group):
             doubleClickCallback = self.sourcesListDoubleClickCallback,
             selectionCallback = self.sourcesListSelectionCallback,
             drawFocusRing = False,
-            showColumnTitles = True
+            showColumnTitles = True,
+            allowsSorting = False
             )
         if sel is not None:
             self.sourcesList.setSelection(sel)
