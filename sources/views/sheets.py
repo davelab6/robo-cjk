@@ -340,7 +340,7 @@ class FontInfosSheet():
         # if not self.RCJKI.get("currentFont"): return
         # print(self.RCJKI.currentFont.designspace)
         fontvariations = []
-        for axis in self.RCJKI.currentFont.designspace["axes"]:
+        for axis in self.RCJKI.currentFont.designspace.get("axes", []):
             axe = dict(tag=axis["tag"], name=axis["name"], minimum=axis["minValue"], maximum=axis["maxValue"], default=axis["defaultValue"])
             fontvariations.append(axe)
         # return
@@ -421,7 +421,7 @@ class FontInfosSheet():
         return axes
 
     def fontVariationAxisListEditCallback(self, sender):
-        self.RCJKI.currentFont.designspace["axes"] = self.formatAxesForJSON
+        self.RCJKI.currentFont.designspace.get("axes", []) = self.formatAxesForJSON
         self.RCJKI.currentFont._fullRFont.lib['robocjk.fontVariations'] = self.fontAxesNames
         self.RCJKI.currentFont.fontVariations = self.fontAxesNames
 
@@ -440,7 +440,7 @@ class FontInfosSheet():
         elem = dict(name=name, tag=tag, minimum=0, default=0, maximum=1)
         elem_designspace = {"name": name, "tag":tag, 'defaultValue':0, "maxValue":1, "minValue":0}
 
-        self.RCJKI.currentFont.designspace["axes"].append(elem_designspace)
+        self.RCJKI.currentFont.designspace.get("axes", []).append(elem_designspace)
         self.s.fontVariationAxisList.append(elem)
         self.RCJKI.currentFont._fullRFont.lib['robocjk.fontVariations'].append(tag)
         self.RCJKI.currentFont.fontVariations.append(tag)
@@ -457,7 +457,7 @@ class FontInfosSheet():
         l = self.s.fontVariationAxisList.get()
         l.pop(sel[0])
         self.s.fontVariationAxisList.set(l)
-        self.RCJKI.currentFont.designspace["axes"] = self.formatAxesForJSON
+        self.RCJKI.currentFont.designspace.get("axes", []) = self.formatAxesForJSON
         self.RCJKI.currentFont._fullRFont.lib['robocjk.fontVariations'] = self.fontAxesNames
         self.RCJKI.currentFont.fontVariations = self.fontAxesNames
 

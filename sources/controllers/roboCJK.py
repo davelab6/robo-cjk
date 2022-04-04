@@ -809,16 +809,16 @@ class RoboCJKController(object):
             self.menuItems.append(item)
         elif self.isCharacterGlyph:
             if not validated:
-                item = ('Add Deep Component', self.addDeepComponent)
+                item = ('Add variable component', self.addDeepComponent)
                 self.menuItems.append(item)
-                item = ('Import Deep Component from another Character Glyph', self.importDeepComponentFromAnotherCharacterGlyph)
+                item = ('Import variable component from another Character Glyph', self.importDeepComponentFromAnotherCharacterGlyph)
                 self.menuItems.append(item)
 
             if self.currentGlyph.selectedElement:
                 if not validated:
-                    item = ('Remove Selected Deep Component', self.removeDeepComponent)
+                    item = ('Remove Selected variable component', self.removeDeepComponent)
                     self.menuItems.append(item)
-                item = ('go to selected deepComponent', self.gotoselectedDC)
+                item = ('go to selected variable component', self.gotoselectedDC)
                 self.menuItems.append(item)
             variationsAxes = [x["layerName"] for x in self.currentGlyph._glyphVariations]
             if len(self.currentGlyph):

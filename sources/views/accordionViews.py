@@ -755,7 +755,7 @@ class AxisSheet:
             axisName = self.w.fontaxes.axisName.getItem()
             # axisName = self.fontVariations[self.w.glyphaxes.axisName.get()]
             minValue, maxValue, defaultValue = 0, 1, 0
-            for axis in self.RCJKI.currentFont.designspace["axes"]:
+            for axis in self.RCJKI.currentFont.designspace.get("axes", []):
                 if axis["tag"] == axisName:
                     minValue = str_to_int_or_float(axis["minValue"])
                     maxValue = str_to_int_or_float(axis["maxValue"])
