@@ -244,6 +244,7 @@ class SelectFontVariationSheet():
             source = [{'Axis':axis, 'PreviewValue':0} for axis in self.RCJKI.currentGlyph._glyphVariations]
         isel = len(source)
         self.RCJKI.currentGlyph.selectedSourceAxis = source[isel-1]['Axis']
+        self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         self.view.sourcesList.setSelection([isel-1])
         self.RCJKI.updateDeepComponent(update = False)
         
@@ -421,7 +422,7 @@ class FontInfosSheet():
         return axes
 
     def fontVariationAxisListEditCallback(self, sender):
-        self.RCJKI.currentFont.designspace.get("axes", []) = self.formatAxesForJSON
+        self.RCJKI.currentFont.designspace["axes"] = self.formatAxesForJSON
         self.RCJKI.currentFont._fullRFont.lib['robocjk.fontVariations'] = self.fontAxesNames
         self.RCJKI.currentFont.fontVariations = self.fontAxesNames
 
@@ -457,7 +458,7 @@ class FontInfosSheet():
         l = self.s.fontVariationAxisList.get()
         l.pop(sel[0])
         self.s.fontVariationAxisList.set(l)
-        self.RCJKI.currentFont.designspace.get("axes", []) = self.formatAxesForJSON
+        self.RCJKI.currentFont.designspace["axes"] = self.formatAxesForJSON
         self.RCJKI.currentFont._fullRFont.lib['robocjk.fontVariations'] = self.fontAxesNames
         self.RCJKI.currentFont.fontVariations = self.fontAxesNames
 

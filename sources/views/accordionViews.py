@@ -656,6 +656,7 @@ class SelectFontVariationSheet():
             source = [{'Axis':axis, 'PreviewValue':0} for axis in self.RCJKI.currentGlyph._glyphVariations]
         isel = len(source)
         self.RCJKI.currentGlyph.selectedSourceAxis = source[isel-1]['Axis']
+        self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         glyphVariationsAxes = []
         for axis, variation in zip(self.RCJKI.currentGlyph._axes, self.RCJKI.currentGlyph._glyphVariations):
             glyphVariationsAxes.append({"Axis":axis.name, "Layer":variation.layerName, "PreviewValue":0, "MinValue":axis.minValue, "MaxValue":axis.maxValue})
@@ -1189,6 +1190,7 @@ class AxesGroup(Group):
         self.setList()
         self.controller.sourcesItem.setList()
         self.RCJKI.currentGlyph.selectedSourceAxis = None
+        self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         self.RCJKI.updateDeepComponent(update = False)
         self.controller.updatePreview()
 
@@ -1336,6 +1338,7 @@ class SourcesSheet:
         self.RCJKI.currentGlyph.addSource(sourceName=sourceName, location=location, layerName=layerName, copyFrom = copyFrom, width = width)
         if self.is_source:
             self.RCJKI.currentGlyph.selectedSourceAxis = sourceName
+            self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
 
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
         self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
@@ -1468,7 +1471,7 @@ class SourcesGroup(Group):
                 variation.sourceName = name
         else:
             locations = {}
-            for axis in self.listDescription[2:]:
+            for axis in self.listDescription[3:]:
                 axisName = axis["title"]
                 value = values[edited[1]][axisName]
                 locations[axisName] = str_to_int_or_float(value)
@@ -1481,8 +1484,10 @@ class SourcesGroup(Group):
     @lockedProtect
     # @refreshPreview
     def sourcesListDoubleClickCallback(self, sender):
+        layername = None
         if not sender.getSelection(): 
             self.RCJKI.currentGlyph.selectedSourceAxis = None
+            self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         else:
             isel = sender.getSelection()[0]
             if self.glyphtype != "atomicElement":
@@ -1490,14 +1495,20 @@ class SourcesGroup(Group):
                 layername = sender.get()[isel]['layerName']
                 if name and not layername:
                     self.RCJKI.currentGlyph.selectedSourceAxis = name
+                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 elif layername and not name:
-                    self.RCJKI.currentGlyph.selectedSourceAxis = layername
+                    self.RCJKI.currentGlyph.selectedSourceAxis = None
+                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 elif layername and name and layername == name:
                     self.RCJKI.currentGlyph.selectedSourceAxis = name
+                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 else:
                     self.RCJKI.currentGlyph.selectedSourceAxis = None
+                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
             else:
-                self.RCJKI.currentGlyph.selectedSourceAxis = sender.get()[isel]['layerName']
+                layername = sender.get()[isel]['layerName']
+                self.RCJKI.currentGlyph.selectedSourceAxis = layername
+                self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
 
         self.RCJKI.currentGlyph.selectedElement = []
         if self.glyphtype != "atomicElement":
@@ -1507,9 +1518,9 @@ class SourcesGroup(Group):
         self.RCJKI.axisPreview = []
 
         if len(self.RCJKI.currentGlyph) and self.RCJKI.currentGlyph.type != "deepComponent":
-            layerName = self.RCJKI.currentGlyph.selectedSourceAxis
-            if layerName in [l.name for l in self.RCJKI.currentFont._RFont.layers]:
-                SetCurrentLayerByName(layerName)
+            # layerName = self.RCJKI.currentGlyph.selectedSourceAxis
+            if layername in [l.name for l in self.RCJKI.currentFont._RFont.layers]:
+                SetCurrentLayerByName(layername)
 
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
         self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
@@ -1531,6 +1542,7 @@ class SourcesGroup(Group):
         self.RCJKI.currentGlyph.removeSource(selectedAxisIndex)
         self.setList()
         self.RCJKI.currentGlyph.selectedSourceAxis = None
+        self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         self.RCJKI.updateDeepComponent()
         self.controller.updatePreview()
         self.sourcesList.setSelection([])
@@ -1780,7 +1792,7 @@ class DeepComponentListGroup(Group):
             index = edited[1]
             name = sender.get()[index]["name"]
             if self.RCJKI.currentGlyph.type == 'characterGlyph':
-                if name not in self.RCJKI.currentFont.staticDeepComponentSet():
+                if name not in self.RCJKI.currentFont.staticDeepComponentSet() | self.RCJKI.currentFont.staticCharacterGlyphSet():
                     self.setList()
                     return
             else:
