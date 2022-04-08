@@ -2186,6 +2186,7 @@ class CopySettingsFromSource:
                     ) for x in characters
                 ]
         self.w.charlist.set(self.characterLists)
+        self._searchGlyphCallback(self.w.searchGlyph)
         self.w.charlist.enable(True)
         queue.task_done()
     
