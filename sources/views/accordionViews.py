@@ -1487,7 +1487,6 @@ class SourcesGroup(Group):
         layername = None
         if not sender.getSelection(): 
             self.RCJKI.currentGlyph.selectedSourceAxis = None
-            self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         else:
             isel = sender.getSelection()[0]
             if self.glyphtype != "atomicElement":
@@ -1495,20 +1494,15 @@ class SourcesGroup(Group):
                 layername = sender.get()[isel]['layerName']
                 if name and not layername:
                     self.RCJKI.currentGlyph.selectedSourceAxis = name
-                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 elif layername and not name:
                     self.RCJKI.currentGlyph.selectedSourceAxis = None
-                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 elif layername and name and layername == name:
                     self.RCJKI.currentGlyph.selectedSourceAxis = name
-                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
                 else:
                     self.RCJKI.currentGlyph.selectedSourceAxis = None
-                    self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
             else:
                 layername = sender.get()[isel]['layerName']
                 self.RCJKI.currentGlyph.selectedSourceAxis = layername
-                self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
 
         self.RCJKI.currentGlyph.selectedElement = []
         if self.glyphtype != "atomicElement":
@@ -1522,6 +1516,7 @@ class SourcesGroup(Group):
             if layername in [l.name for l in self.RCJKI.currentFont._RFont.layers]:
                 SetCurrentLayerByName(layername)
 
+        self.RCJKI.copyDCSettingsFromAnotherGlyphWindowSetUI()
         self.RCJKI.currentGlyph.redrawSelectedElementSource = True
         self.RCJKI.currentGlyph.redrawSelectedElementPreview = True
         self.RCJKI.updateDeepComponent(update = False)
