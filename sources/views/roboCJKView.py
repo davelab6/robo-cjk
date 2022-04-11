@@ -2046,7 +2046,6 @@ class CopySettingsFromSource:
         self.selectedDeepComponentIndex = None
         self.selectedDeepComponentName = None
         self.selectedDeepComponentGlyph = None
-        self.DC2CG = {}
         self.location = {}
         self.w = FloatingWindow((350, 200))
         self.characterLists = []
@@ -2178,19 +2177,15 @@ class CopySettingsFromSource:
             self.selectedDeepComponentGlyph = None
             self.glyph = None
         else:
-            if name in self.DC2CG:
-                self.characterLists = self.DC2CG.get(name, [])
-            else:
-                f = self.RCJKI.currentFont
-                used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
-                characters = [x["name"] for x in used_by]
-                self.characterLists = [
-                    dict(
-                        name=x, 
-                        char=chr(int(x.split(".")[0][3:],16))
-                        ) for x in characters
-                    ]
-                self.DC2CG[name] = self.characterLists
+            f = self.RCJKI.currentFont
+            used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
+            characters = [x["name"] for x in used_by]
+            self.characterLists = [
+                dict(
+                    name=x, 
+                    char=chr(int(x.split(".")[0][3:],16))
+                    ) for x in characters
+                ]
         self.w.charlist.set(self.characterLists)
         self._searchGlyphCallback(self.w.searchGlyph)
         self.w.charlist.enable(True)
@@ -2198,12 +2193,9 @@ class CopySettingsFromSource:
     
     
     def _setCharList(self):
-        try:
-            self.queue = queue.Queue()
-            threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
-            self.queue.put(self.selectedDeepComponentName)
-        except Exception as e:
-            print("Thread 1 Exception", e)
+        self.queue = queue.Queue()
+        threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
+        self.queue.put(self.selectedDeepComponentName)
  
     
     def _charlistSelectionCallback(self, sender):
