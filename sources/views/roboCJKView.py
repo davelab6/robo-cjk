@@ -2170,40 +2170,40 @@ class CopySettingsFromSource:
 
     def _getAndSetCharlist_queue(self, queue):
         name = queue.get()
-        try:
-            self.w.charlist.enable(False)
-            if name is None:
-                self.characterLists = []
-                self.selectedDeepComponentIndex = None
-                self.selectedDeepComponentName = None
-                self.selectedDeepComponentGlyph = None
-                self.glyph = None
+        self.w.charlist.enable(False)
+        if name is None:
+            self.characterLists = []
+            self.selectedDeepComponentIndex = None
+            self.selectedDeepComponentName = None
+            self.selectedDeepComponentGlyph = None
+            self.glyph = None
+        else:
+            if name in self.DC2CG:
+                self.characterLists = self.DC2CG.get(name, [])
             else:
-                if name in self.DC2CG:
-                    self.characterLists = self.DC2CG.get(name, [])
-                else:
-                    f = self.RCJKI.currentFont
-                    used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
-                    characters = [x["name"] for x in used_by]
-                    self.characterLists = [
-                        dict(
-                            name=x, 
-                            char=chr(int(x.split(".")[0][3:],16))
-                            ) for x in characters
-                        ]
-                    self.DC2CG[name] = self.characterLists
-            self.w.charlist.set(self.characterLists)
-            self._searchGlyphCallback(self.w.searchGlyph)
-            self.w.charlist.enable(True)
-        except Exception as e:
-            print("Thread 1 Exception", e)
+                f = self.RCJKI.currentFont
+                used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
+                characters = [x["name"] for x in used_by]
+                self.characterLists = [
+                    dict(
+                        name=x, 
+                        char=chr(int(x.split(".")[0][3:],16))
+                        ) for x in characters
+                    ]
+                self.DC2CG[name] = self.characterLists
+        self.w.charlist.set(self.characterLists)
+        self._searchGlyphCallback(self.w.searchGlyph)
+        self.w.charlist.enable(True)
         queue.task_done()
     
     
     def _setCharList(self):
-        self.queue = queue.Queue()
-        threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
-        self.queue.put(self.selectedDeepComponentName)
+        try:
+            self.queue = queue.Queue()
+            threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
+            self.queue.put(self.selectedDeepComponentName)
+        except Exception as e:
+            print("Thread 1 Exception", e)
  
     
     def _charlistSelectionCallback(self, sender):
