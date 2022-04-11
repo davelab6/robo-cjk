@@ -2049,6 +2049,7 @@ class CopySettingsFromSource:
         self.location = {}
         self.w = FloatingWindow((350, 200))
         self.characterLists = []
+        self.DC2CG = {}
         self.w.searchGlyph = EditText((0, 0, 150, 20), "",
             callback = self._searchGlyphCallback,
             continuous = False)
@@ -2186,6 +2187,7 @@ class CopySettingsFromSource:
                     char=chr(int(x.split(".")[0][3:],16))
                     ) for x in characters
                 ]
+            self.DC2CG[name] = self.characterLists
         self.w.charlist.set(self.characterLists)
         self._searchGlyphCallback(self.w.searchGlyph)
         self.w.charlist.enable(True)
@@ -2193,9 +2195,15 @@ class CopySettingsFromSource:
     
     
     def _setCharList(self):
-        self.queue = queue.Queue()
-        threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
-        self.queue.put(self.selectedDeepComponentName)
+        name = self.selectedDeepComponentName
+        if name in self.DC2CG:
+            self.characterLists = self.DC2CG[name]
+            self.w.charlist.set(self.characterLists)
+            self._searchGlyphCallback(self.w.searchGlyph)
+        else:
+            self.queue = queue.Queue()
+            threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
+            self.queue.put(self.selectedDeepComponentName)
  
     
     def _charlistSelectionCallback(self, sender):
