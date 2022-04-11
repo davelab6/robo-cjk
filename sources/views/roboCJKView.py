@@ -2180,7 +2180,7 @@ class CopySettingsFromSource:
         else:
             f = self.RCJKI.currentFont
             used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
-            characters = [x["name"] for x in used_by]
+            characters = sorted([x["name"] for x in used_by])
             self.characterLists = [
                 dict(
                     name=x, 
