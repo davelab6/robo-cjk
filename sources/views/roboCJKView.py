@@ -30,6 +30,7 @@ from AppKit import NSFont, NumberFormatter, NSColor
 from imp import reload
 from utils import decorators, files
 from lib.cells.colorCell import RFColorCell
+from collections import defaultdict
 # reload(decorators)
 # reload(files)
 # reload(canvasGroups)
@@ -2045,6 +2046,7 @@ class CopySettingsFromSource:
         self.selectedDeepComponentIndex = None
         self.selectedDeepComponentName = None
         self.selectedDeepComponentGlyph = None
+        self.DC2CG = {}
         self.location = {}
         self.w = FloatingWindow((350, 200))
         self.characterLists = []
@@ -2168,26 +2170,33 @@ class CopySettingsFromSource:
 
     def _getAndSetCharlist_queue(self, queue):
         name = queue.get()
-        self.w.charlist.enable(False)
-        if name is None:
-            self.characterLists = []
-            self.selectedDeepComponentIndex = None
-            self.selectedDeepComponentName = None
-            self.selectedDeepComponentGlyph = None
-            self.glyph = None
-        else:
-            f = self.RCJKI.currentFont
-            used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
-            characters = [x["name"] for x in used_by]
-            self.characterLists = [
-                dict(
-                    name=x, 
-                    char=chr(int(x.split(".")[0][3:],16))
-                    ) for x in characters
-                ]
-        self.w.charlist.set(self.characterLists)
-        self._searchGlyphCallback(self.w.searchGlyph)
-        self.w.charlist.enable(True)
+        try:
+            self.w.charlist.enable(False)
+            if name is None:
+                self.characterLists = []
+                self.selectedDeepComponentIndex = None
+                self.selectedDeepComponentName = None
+                self.selectedDeepComponentGlyph = None
+                self.glyph = None
+            else:
+                if name in self.DC2CG:
+                    self.characterLists = self.DC2CG.get(name, [])
+                else:
+                    f = self.RCJKI.currentFont
+                    used_by = f.client.deep_component_get(f.uid, name)["data"]["used_by"]
+                    characters = [x["name"] for x in used_by]
+                    self.characterLists = [
+                        dict(
+                            name=x, 
+                            char=chr(int(x.split(".")[0][3:],16))
+                            ) for x in characters
+                        ]
+                    self.DC2CG[name] = self.characterLists
+            self.w.charlist.set(self.characterLists)
+            self._searchGlyphCallback(self.w.searchGlyph)
+            self.w.charlist.enable(True)
+        except Exception as e:
+            print("Thread 1 Exception", e)
         queue.task_done()
     
     
