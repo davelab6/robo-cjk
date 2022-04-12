@@ -2191,6 +2191,7 @@ class CopySettingsFromSource:
         self.w.charlist.set(self.characterLists)
         self._searchGlyphCallback(self.w.searchGlyph)
         self.w.charlist.enable(True)
+        self.w.canvas.update()
         queue.task_done()
     
     
@@ -2200,6 +2201,7 @@ class CopySettingsFromSource:
             self.characterLists = self.DC2CG[name]
             self.w.charlist.set(self.characterLists)
             self._searchGlyphCallback(self.w.searchGlyph)
+            self.w.canvas.update()
         else:
             self.queue = queue.Queue()
             threading.Thread(target=self._getAndSetCharlist_queue, args = (self.queue,), daemon=True).start()
@@ -2222,7 +2224,7 @@ class CopySettingsFromSource:
             self.selectedDeepComponentName = None
 
         self._setCharList()
-        self.w.canvas.update()
+        
 
 
     def setUI(self, empty = False):
